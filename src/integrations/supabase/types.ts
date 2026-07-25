@@ -14,13 +14,54 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      profiles: {
+        Row: {
+          active_whatsapp: number
+          created_at: string
+          earned_today: number
+          id: string
+          invitation_code: string
+          phone: string
+          referred_by: string | null
+          total_sms_sent: number
+          updated_at: string
+          username: string
+          wallet_balance: number
+        }
+        Insert: {
+          active_whatsapp?: number
+          created_at?: string
+          earned_today?: number
+          id: string
+          invitation_code: string
+          phone: string
+          referred_by?: string | null
+          total_sms_sent?: number
+          updated_at?: string
+          username: string
+          wallet_balance?: number
+        }
+        Update: {
+          active_whatsapp?: number
+          created_at?: string
+          earned_today?: number
+          id?: string
+          invitation_code?: string
+          phone?: string
+          referred_by?: string | null
+          total_sms_sent?: number
+          updated_at?: string
+          username?: string
+          wallet_balance?: number
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      generate_invitation_code: { Args: never; Returns: string }
     }
     Enums: {
       [_ in never]: never
