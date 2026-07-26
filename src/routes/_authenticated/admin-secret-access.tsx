@@ -4,17 +4,17 @@ import { Card } from "@/components/ui/card";
 import { ShieldCheck } from "lucide-react";
 import { useIsAdmin } from "@/lib/role";
 
-export const Route = createFileRoute("/_authenticated/admin")({
+export const Route = createFileRoute("/_authenticated/admin-secret-access")({
   head: () => ({
     meta: [
       { title: "Admin — TaskPay" },
       { name: "robots", content: "noindex" },
     ],
   }),
-  component: AdminPage,
+  component: AdminSecretPage,
 });
 
-function AdminPage() {
+function AdminSecretPage() {
   const isAdmin = useIsAdmin();
   const navigate = useNavigate();
 
@@ -25,7 +25,7 @@ function AdminPage() {
   if (isAdmin !== true) {
     return (
       <Card className="p-8 gradient-card border-border/60 text-center shadow-card">
-        <p className="text-muted-foreground text-sm">Checking access…</p>
+        <p className="text-muted-foreground text-sm">Verifying access…</p>
       </Card>
     );
   }
@@ -37,12 +37,12 @@ function AdminPage() {
           <ShieldCheck className="w-5 h-5" />
         </div>
         <div>
-          <h1 className="text-2xl font-bold tracking-tight">Admin</h1>
+          <h1 className="text-2xl font-bold tracking-tight">Admin (Secret Access)</h1>
           <p className="text-sm text-muted-foreground">Restricted admin controls.</p>
         </div>
       </div>
       <Card className="p-8 gradient-card border-border/60 shadow-card">
-        <p className="text-muted-foreground text-sm">Welcome, admin. Admin tools will appear here.</p>
+        <p className="text-muted-foreground text-sm">Welcome, admin.</p>
       </Card>
     </div>
   );
