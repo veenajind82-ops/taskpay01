@@ -1,20 +1,35 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { useEffect } from "react";
 import { Card } from "@/components/ui/card";
 import { ShieldCheck } from "lucide-react";
+import { useIsAdmin } from "@/lib/role";
 
 export const Route = createFileRoute("/_authenticated/admin")({
   head: () => ({
     meta: [
       { title: "Admin — TaskPay" },
-      { name: "description", content: "TaskPay admin controls." },
-      { property: "og:title", content: "Admin — TaskPay" },
-      { property: "og:description", content: "TaskPay admin controls." },
+      { name: "robots", content: "noindex" },
     ],
   }),
   component: AdminPage,
 });
 
 function AdminPage() {
+  const isAdmin = useIsAdmin();
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    if (isAdmin === false) navigate({ to: "/dashboard", replace: true });
+  }, [isAdmin, navigate]);
+
+  if (isAdmin !== true) {
+    return (
+      <Card className="p-8 gradient-card border-border/60 text-center shadow-card">
+        <p className="text-muted-foreground text-sm">Checking access…</p>
+      </Card>
+    );
+  }
+
   return (
     <div className="space-y-4">
       <div className="flex items-center gap-3">
@@ -23,11 +38,11 @@ function AdminPage() {
         </div>
         <div>
           <h1 className="text-2xl font-bold tracking-tight">Admin</h1>
-          <p className="text-sm text-muted-foreground">Restricted controls.</p>
+          <p className="text-sm text-muted-foreground">Restricted admin controls.</p>
         </div>
       </div>
-      <Card className="p-8 gradient-card border-border/60 text-center shadow-card">
-        <p className="text-muted-foreground text-sm">You don't have admin access.</p>
+      <Card className="p-8 gradient-card border-border/60 shadow-card">
+        <p className="text-muted-foreground text-sm">Welcome, admin. Admin tools will appear here.</p>
       </Card>
     </div>
   );
