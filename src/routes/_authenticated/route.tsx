@@ -98,7 +98,7 @@ function AuthenticatedLayout() {
 
       {/* Bottom Navigation */}
       <nav className="fixed bottom-0 inset-x-0 z-50 bg-card/95 backdrop-blur-lg border-t border-border">
-        <div className="max-w-6xl mx-auto grid grid-cols-6">
+        <div className="max-w-6xl mx-auto grid grid-cols-5">
           {navItems.map((item) => {
             const Icon = item.icon;
             const active = isActive(item.to);
