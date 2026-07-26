@@ -40,7 +40,6 @@ function AuthenticatedLayout() {
     { to: "/sms", label: "SMS Tasks", icon: MessageSquare },
     { to: "/whatsapp", label: "WhatsApp", icon: MessageCircle },
     { to: "/wallet", label: "Wallet", icon: Wallet },
-    { to: "/admin", label: "Admin", icon: ShieldCheck },
   ] as const;
 
   const isActive = (to: string) => location.pathname === to || location.pathname.startsWith(to + "/");
