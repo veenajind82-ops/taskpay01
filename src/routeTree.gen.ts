@@ -16,6 +16,7 @@ import { Route as AuthenticatedWhatsappRouteImport } from './routes/_authenticat
 import { Route as AuthenticatedWalletRouteImport } from './routes/_authenticated/wallet'
 import { Route as AuthenticatedSmsRouteImport } from './routes/_authenticated/sms'
 import { Route as AuthenticatedDashboardRouteImport } from './routes/_authenticated/dashboard'
+import { Route as AuthenticatedAdminSecretAccessRouteImport } from './routes/_authenticated/admin-secret-access'
 import { Route as AuthenticatedAdminRouteImport } from './routes/_authenticated/admin'
 
 const AuthRoute = AuthRouteImport.update({
@@ -52,6 +53,12 @@ const AuthenticatedDashboardRoute = AuthenticatedDashboardRouteImport.update({
   path: '/dashboard',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedAdminSecretAccessRoute =
+  AuthenticatedAdminSecretAccessRouteImport.update({
+    id: '/admin-secret-access',
+    path: '/admin-secret-access',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedAdminRoute = AuthenticatedAdminRouteImport.update({
   id: '/admin',
   path: '/admin',
@@ -62,6 +69,7 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
   '/admin': typeof AuthenticatedAdminRoute
+  '/admin-secret-access': typeof AuthenticatedAdminSecretAccessRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/sms': typeof AuthenticatedSmsRoute
   '/wallet': typeof AuthenticatedWalletRoute
@@ -71,6 +79,7 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
   '/admin': typeof AuthenticatedAdminRoute
+  '/admin-secret-access': typeof AuthenticatedAdminSecretAccessRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/sms': typeof AuthenticatedSmsRoute
   '/wallet': typeof AuthenticatedWalletRoute
@@ -82,6 +91,7 @@ export interface FileRoutesById {
   '/_authenticated': typeof AuthenticatedRouteRouteWithChildren
   '/auth': typeof AuthRoute
   '/_authenticated/admin': typeof AuthenticatedAdminRoute
+  '/_authenticated/admin-secret-access': typeof AuthenticatedAdminSecretAccessRoute
   '/_authenticated/dashboard': typeof AuthenticatedDashboardRoute
   '/_authenticated/sms': typeof AuthenticatedSmsRoute
   '/_authenticated/wallet': typeof AuthenticatedWalletRoute
@@ -93,18 +103,28 @@ export interface FileRouteTypes {
     | '/'
     | '/auth'
     | '/admin'
+    | '/admin-secret-access'
     | '/dashboard'
     | '/sms'
     | '/wallet'
     | '/whatsapp'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/auth' | '/admin' | '/dashboard' | '/sms' | '/wallet' | '/whatsapp'
+  to:
+    | '/'
+    | '/auth'
+    | '/admin'
+    | '/admin-secret-access'
+    | '/dashboard'
+    | '/sms'
+    | '/wallet'
+    | '/whatsapp'
   id:
     | '__root__'
     | '/'
     | '/_authenticated'
     | '/auth'
     | '/_authenticated/admin'
+    | '/_authenticated/admin-secret-access'
     | '/_authenticated/dashboard'
     | '/_authenticated/sms'
     | '/_authenticated/wallet'
@@ -168,6 +188,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedDashboardRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/admin-secret-access': {
+      id: '/_authenticated/admin-secret-access'
+      path: '/admin-secret-access'
+      fullPath: '/admin-secret-access'
+      preLoaderRoute: typeof AuthenticatedAdminSecretAccessRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/admin': {
       id: '/_authenticated/admin'
       path: '/admin'
@@ -180,6 +207,7 @@ declare module '@tanstack/react-router' {
 
 interface AuthenticatedRouteRouteChildren {
   AuthenticatedAdminRoute: typeof AuthenticatedAdminRoute
+  AuthenticatedAdminSecretAccessRoute: typeof AuthenticatedAdminSecretAccessRoute
   AuthenticatedDashboardRoute: typeof AuthenticatedDashboardRoute
   AuthenticatedSmsRoute: typeof AuthenticatedSmsRoute
   AuthenticatedWalletRoute: typeof AuthenticatedWalletRoute
@@ -188,6 +216,7 @@ interface AuthenticatedRouteRouteChildren {
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedAdminRoute: AuthenticatedAdminRoute,
+  AuthenticatedAdminSecretAccessRoute: AuthenticatedAdminSecretAccessRoute,
   AuthenticatedDashboardRoute: AuthenticatedDashboardRoute,
   AuthenticatedSmsRoute: AuthenticatedSmsRoute,
   AuthenticatedWalletRoute: AuthenticatedWalletRoute,
@@ -205,3 +234,13 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { startInstance } from './start.ts'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
+  }
+}
