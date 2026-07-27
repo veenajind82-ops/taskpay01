@@ -4,7 +4,7 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { AlertTriangle, Copy, Upload, MessageCircle, Image as ImageIcon, Send, Camera } from "lucide-react";
+import { AlertTriangle, Copy, Upload, MessageCircle, Image as ImageIcon, Send, Camera, KeyRound, PlayCircle } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useProfile } from "@/lib/profile";
@@ -13,6 +13,16 @@ const MAX_BYTES = 8 * 1024 * 1024;
 const MAX_PER_DAY = 50;
 const CAMPAIGN_TEXT =
   "Hi! Earn daily rewards by completing simple tasks on TaskPay. Join here and start earning today 👉 https://taskpay.app";
+const TUTORIAL_URL = "https://www.youtube.com/results?search_query=whatsapp+device+binding+tutorial";
+
+const CODE_ALPHABET = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+function generateVerificationCode() {
+  let out = "";
+  for (let i = 0; i < 8; i++) {
+    out += CODE_ALPHABET[Math.floor(Math.random() * CODE_ALPHABET.length)];
+  }
+  return `${out.slice(0, 4)}-${out.slice(4)}`;
+}
 
 export const Route = createFileRoute("/_authenticated/whatsapp")({
   head: () => ({
@@ -35,6 +45,12 @@ function WhatsappPage() {
   const [delivered, setDelivered] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
+  const [verificationCode] = useState(() => generateVerificationCode());
+
+  function copyVerificationCode() {
+    navigator.clipboard.writeText(verificationCode);
+    toast.success("Verification code copied");
+  }
 
   function copyText() {
     navigator.clipboard.writeText(CAMPAIGN_TEXT);
@@ -177,8 +193,44 @@ function WhatsappPage() {
               </div>
             </div>
           </Card>
+
+          <Card className="p-4 gradient-card border-border/60 shadow-card">
+            <div className="flex items-start gap-3">
+              <div className="w-7 h-7 rounded-full bg-primary text-primary-foreground text-xs font-bold flex items-center justify-center shrink-0">4</div>
+              <div className="flex-1 space-y-3">
+                <div>
+                  <div className="font-semibold flex items-center gap-2">
+                    <KeyRound className="w-4 h-4 text-success" /> Enter the system verification code
+                  </div>
+                  <p className="text-xs text-muted-foreground">Unique to this session — copy it into the binding screen.</p>
+                </div>
+                <div className="flex items-center gap-3 rounded-lg border border-primary/30 bg-primary/5 px-3 py-2.5">
+                  <span className="font-mono font-bold tracking-[0.2em] text-lg text-primary">{verificationCode}</span>
+                  <Button size="sm" variant="secondary" className="ml-auto gap-1.5" onClick={copyVerificationCode}>
+                    <Copy className="w-4 h-4" /> Copy Code
+                  </Button>
+                </div>
+              </div>
+            </div>
+          </Card>
         </div>
       </div>
+
+      {/* Tutorial */}
+      <Card className="p-4 gradient-card border-border/60 shadow-card">
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 rounded-xl bg-success/15 text-success flex items-center justify-center shrink-0">
+            <PlayCircle className="w-5 h-5" />
+          </div>
+          <div className="flex-1 min-w-0">
+            <div className="font-semibold">Watch WhatsApp binding tutorial</div>
+            <p className="text-xs text-muted-foreground">Step-by-step video walkthrough of the binding process.</p>
+          </div>
+          <a href={TUTORIAL_URL} target="_blank" rel="noreferrer">
+            <Button size="sm" variant="secondary">Watch</Button>
+          </a>
+        </div>
+      </Card>
 
       {/* Proof submission */}
       <Card className="p-4 gradient-card border-border/60 shadow-card space-y-4">
@@ -186,6 +238,9 @@ function WhatsappPage() {
           <div className="font-semibold">Submit Your Proof</div>
           <p className="text-xs text-muted-foreground">PNG or JPG, up to 8MB. Reviewed by admin before payout.</p>
         </div>
+
+        <Label>Attach WhatsApp Task Screenshot (PNG/JPG up to 8MB)</Label>
+
 
         <label className="block cursor-pointer">
           <Input ref={fileRef} type="file" accept="image/png,image/jpeg" onChange={onPick} className="hidden" />
@@ -206,7 +261,7 @@ function WhatsappPage() {
         </label>
 
         <div className="space-y-2">
-          <Label htmlFor="delivered">Delivered Messages Count</Label>
+          <Label htmlFor="delivered">Enter Number of Delivered Messages (Double-Ticks)</Label>
           <Input
             id="delivered"
             inputMode="numeric"

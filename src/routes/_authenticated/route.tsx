@@ -1,7 +1,7 @@
 import { createFileRoute, Outlet, redirect, Link, useNavigate, useLocation } from "@tanstack/react-router";
 import { supabase } from "@/integrations/supabase/client";
 import { useProfile } from "@/lib/profile";
-import { Copy, User as UserIcon, Wallet, LayoutDashboard, MessageSquare, MessageCircle, LogOut } from "lucide-react";
+import { Copy, User as UserIcon, Wallet, LayoutDashboard, MessageSquare, MessageCircle, LogOut, Shield } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 
@@ -40,6 +40,7 @@ function AuthenticatedLayout() {
     { to: "/sms", label: "SMS Tasks", icon: MessageSquare },
     { to: "/whatsapp", label: "WhatsApp", icon: MessageCircle },
     { to: "/wallet", label: "Wallet", icon: Wallet },
+    { to: "/admin", label: "Admin", icon: Shield },
   ] as const;
 
   const isActive = (to: string) => location.pathname === to || location.pathname.startsWith(to + "/");
@@ -98,7 +99,7 @@ function AuthenticatedLayout() {
 
       {/* Bottom Navigation */}
       <nav className="fixed bottom-0 inset-x-0 z-50 bg-card/95 backdrop-blur-lg border-t border-border">
-        <div className="max-w-6xl mx-auto grid grid-cols-5">
+        <div className="max-w-6xl mx-auto grid grid-cols-6">
           {navItems.map((item) => {
             const Icon = item.icon;
             const active = isActive(item.to);
