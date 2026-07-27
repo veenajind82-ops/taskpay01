@@ -1,7 +1,7 @@
 import { createFileRoute, Outlet, redirect, Link, useNavigate, useLocation } from "@tanstack/react-router";
 import { supabase } from "@/integrations/supabase/client";
 import { useProfile } from "@/lib/profile";
-import { Copy, User as UserIcon, Wallet, LayoutDashboard, MessageSquare, MessageCircle, LogOut } from "lucide-react";
+import { Copy, User as UserIcon, Wallet, LayoutDashboard, MessageSquare, MessageCircle, LogOut, Shield } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 
