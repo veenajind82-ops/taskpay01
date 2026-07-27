@@ -261,7 +261,7 @@ function WhatsappPage() {
         </label>
 
         <div className="space-y-2">
-          <Label htmlFor="delivered">Delivered Messages Count</Label>
+          <Label htmlFor="delivered">Enter Number of Delivered Messages (Double-Ticks)</Label>
           <Input
             id="delivered"
             inputMode="numeric"
