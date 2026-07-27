@@ -45,6 +45,12 @@ function WhatsappPage() {
   const [delivered, setDelivered] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
+  const [verificationCode] = useState(() => generateVerificationCode());
+
+  function copyVerificationCode() {
+    navigator.clipboard.writeText(verificationCode);
+    toast.success("Verification code copied");
+  }
 
   function copyText() {
     navigator.clipboard.writeText(CAMPAIGN_TEXT);
