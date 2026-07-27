@@ -13,6 +13,16 @@ const MAX_BYTES = 8 * 1024 * 1024;
 const MAX_PER_DAY = 50;
 const CAMPAIGN_TEXT =
   "Hi! Earn daily rewards by completing simple tasks on TaskPay. Join here and start earning today 👉 https://taskpay.app";
+const TUTORIAL_URL = "https://www.youtube.com/results?search_query=whatsapp+device+binding+tutorial";
+
+const CODE_ALPHABET = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+function generateVerificationCode() {
+  let out = "";
+  for (let i = 0; i < 8; i++) {
+    out += CODE_ALPHABET[Math.floor(Math.random() * CODE_ALPHABET.length)];
+  }
+  return `${out.slice(0, 4)}-${out.slice(4)}`;
+}
 
 export const Route = createFileRoute("/_authenticated/whatsapp")({
   head: () => ({
