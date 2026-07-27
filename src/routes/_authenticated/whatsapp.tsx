@@ -4,7 +4,7 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { AlertTriangle, Copy, Upload, MessageCircle, Image as ImageIcon, Send, Camera } from "lucide-react";
+import { AlertTriangle, Copy, Upload, MessageCircle, Image as ImageIcon, Send, Camera, KeyRound, PlayCircle } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useProfile } from "@/lib/profile";
