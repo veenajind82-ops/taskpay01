@@ -143,6 +143,45 @@ export type Database = {
         }
         Relationships: []
       }
+      withdrawal_requests: {
+        Row: {
+          account_name: string
+          admin_note: string | null
+          amount: number
+          created_at: string
+          id: string
+          phone: string
+          status: string
+          updated_at: string
+          upi_id: string
+          user_id: string
+        }
+        Insert: {
+          account_name: string
+          admin_note?: string | null
+          amount: number
+          created_at?: string
+          id?: string
+          phone: string
+          status?: string
+          updated_at?: string
+          upi_id: string
+          user_id: string
+        }
+        Update: {
+          account_name?: string
+          admin_note?: string | null
+          amount?: number
+          created_at?: string
+          id?: string
+          phone?: string
+          status?: string
+          updated_at?: string
+          upi_id?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
@@ -152,6 +191,11 @@ export type Database = {
         Args: { _rate?: number; _submission_id: string }
         Returns: undefined
       }
+      approve_whatsapp_submission: {
+        Args: { _rate?: number; _submission_id: string }
+        Returns: undefined
+      }
+      approve_withdrawal: { Args: { _request_id: string }; Returns: undefined }
       generate_invitation_code: { Args: never; Returns: string }
       has_role: {
         Args: {
@@ -163,6 +207,18 @@ export type Database = {
       reject_sms_submission: {
         Args: { _submission_id: string }
         Returns: undefined
+      }
+      reject_whatsapp_submission: {
+        Args: { _submission_id: string }
+        Returns: undefined
+      }
+      reject_withdrawal: {
+        Args: { _note?: string; _request_id: string }
+        Returns: undefined
+      }
+      request_withdrawal: {
+        Args: { _account_name: string; _amount: number; _upi_id: string }
+        Returns: string
       }
     }
     Enums: {
