@@ -60,6 +60,7 @@ export type Database = {
         Row: {
           created_at: string
           id: string
+          message_count: number
           phone: string
           screenshot_url: string
           status: string
@@ -69,6 +70,7 @@ export type Database = {
         Insert: {
           created_at?: string
           id?: string
+          message_count?: number
           phone: string
           screenshot_url: string
           status?: string
@@ -78,6 +80,7 @@ export type Database = {
         Update: {
           created_at?: string
           id?: string
+          message_count?: number
           phone?: string
           screenshot_url?: string
           status?: string
@@ -145,6 +148,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      approve_sms_submission: {
+        Args: { _rate?: number; _submission_id: string }
+        Returns: undefined
+      }
       generate_invitation_code: { Args: never; Returns: string }
       has_role: {
         Args: {
@@ -152,6 +159,10 @@ export type Database = {
           _user_id: string
         }
         Returns: boolean
+      }
+      reject_sms_submission: {
+        Args: { _submission_id: string }
+        Returns: undefined
       }
     }
     Enums: {
