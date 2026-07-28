@@ -50,6 +50,15 @@ function WhatsappPage() {
         </div>
       </div>
 
+      <Card className="p-4 border-success/40 bg-success/10 shadow-card">
+        <div className="text-sm font-semibold text-success">Rate: ₹1 per double-tick message</div>
+        <p className="text-xs text-muted-foreground mt-1 leading-relaxed">
+          You earn ₹1 for every delivered (double-tick) WhatsApp message approved by admin. Maximum 50
+          messages per day.
+        </p>
+      </Card>
+
+
       <Button
         className="w-full gap-2"
         onClick={() => {
