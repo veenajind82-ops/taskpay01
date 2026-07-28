@@ -35,15 +35,18 @@ function AuthenticatedLayout() {
     toast.success("Invitation code copied");
   }
 
+  const isMasterAdmin = last10(profile?.phone) === MASTER_ADMIN_PHONE;
+
   const navItems = [
     { to: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
     { to: "/sms", label: "SMS Tasks", icon: MessageSquare },
     { to: "/whatsapp", label: "WhatsApp", icon: MessageCircle },
     { to: "/wallet", label: "Wallet", icon: Wallet },
-    { to: "/admin", label: "Admin", icon: Shield },
-  ] as const;
+    ...(isMasterAdmin ? [{ to: "/admin", label: "Admin", icon: Shield }] : []),
+  ];
 
   const isActive = (to: string) => location.pathname === to || location.pathname.startsWith(to + "/");
+
 
   return (
     <div className="min-h-screen pb-24">
