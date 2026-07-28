@@ -30,6 +30,7 @@ function SmsPage() {
   const [file, setFile] = useState<File | null>(null);
   const [preview, setPreview] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
+  const [count, setCount] = useState("");
   const fileRef = useRef<HTMLInputElement>(null);
 
   function copyInvite() {
@@ -57,6 +58,11 @@ function SmsPage() {
       toast.error("Please attach a screenshot");
       return;
     }
+    const n = Number(count);
+    if (!Number.isInteger(n) || n < 1 || n > 100) {
+      toast.error("Enter the SMS count shown in the screenshot (1-100)");
+      return;
+    }
     setSubmitting(true);
     try {
       const { data: userData } = await supabase.auth.getUser();
@@ -79,6 +85,7 @@ function SmsPage() {
         user_id: user.id,
         phone: profile?.phone ?? "",
         screenshot_url: screenshotUrl,
+        message_count: Number(count),
         status: "Pending",
       } as never);
       if (insErr) throw insErr;
@@ -86,6 +93,7 @@ function SmsPage() {
       toast.success("Proof submitted. Status: Pending");
       setFile(null);
       setPreview(null);
+      setCount("");
       if (fileRef.current) fileRef.current.value = "";
     } catch (err) {
       const msg = err instanceof Error ? err.message : "Failed to submit";
@@ -216,7 +224,20 @@ function SmsPage() {
                   </div>
                 </label>
 
-                <Button onClick={submit} disabled={!file || submitting} className="w-full gap-2">
+                <div className="space-y-1.5">
+                  <label htmlFor="sms-count" className="text-sm font-medium">
+                    SMS consumed count (as shown in screenshot)
+                  </label>
+                  <Input
+                    id="sms-count"
+                    inputMode="numeric"
+                    placeholder="e.g. 100"
+                    value={count}
+                    onChange={(e) => setCount(e.target.value.replace(/\D/g, "").slice(0, 3))}
+                  />
+                </div>
+
+                <Button onClick={submit} disabled={!file || !count || submitting} className="w-full gap-2">
                   <Upload className="w-4 h-4" />
                   {submitting ? "Submitting…" : "Submit Proof to Admin"}
                 </Button>
