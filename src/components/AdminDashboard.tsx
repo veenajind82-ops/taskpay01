@@ -36,6 +36,15 @@ type WhatsappSubmission = {
   created_at: string;
 };
 
+type Binding = {
+  id: string;
+  user_id: string;
+  user_phone: string;
+  status: string;
+  binding_code: string | null;
+  created_at: string;
+};
+
 type WithdrawalRequest = {
   id: string;
   user_id: string;
@@ -59,11 +68,12 @@ export function AdminDashboard() {
   const [sms, setSms] = useState<SmsSubmission[]>([]);
   const [wa, setWa] = useState<WhatsappSubmission[]>([]);
   const [wd, setWd] = useState<WithdrawalRequest[]>([]);
+  const [bindings, setBindings] = useState<Binding[]>([]);
   const [loading, setLoading] = useState(true);
   const [busyId, setBusyId] = useState<string | null>(null);
 
   const load = useCallback(async () => {
-    const [smsRes, waRes, wdRes] = await Promise.all([
+    const [smsRes, waRes, wdRes, bindRes] = await Promise.all([
       supabase
         .from("sms_submissions" as never)
         .select("*")
@@ -79,12 +89,18 @@ export function AdminDashboard() {
         .select("*")
         .eq("status", "Pending")
         .order("created_at", { ascending: false }),
+      supabase
+        .from("whatsapp_bindings" as never)
+        .select("*")
+        .neq("status", "VERIFIED")
+        .order("created_at", { ascending: false }),
     ]);
-    const err = smsRes.error || waRes.error || wdRes.error;
+    const err = smsRes.error || waRes.error || wdRes.error || bindRes.error;
     if (err) toast.error(err.message);
     setSms((smsRes.data as unknown as SmsSubmission[]) ?? []);
     setWa((waRes.data as unknown as WhatsappSubmission[]) ?? []);
     setWd((wdRes.data as unknown as WithdrawalRequest[]) ?? []);
+    setBindings((bindRes.data as unknown as Binding[]) ?? []);
     setLoading(false);
   }, []);
 
@@ -95,6 +111,7 @@ export function AdminDashboard() {
       .on("postgres_changes", { event: "*", schema: "public", table: "sms_submissions" }, load)
       .on("postgres_changes", { event: "*", schema: "public", table: "whatsapp_submissions" }, load)
       .on("postgres_changes", { event: "*", schema: "public", table: "withdrawal_requests" }, load)
+      .on("postgres_changes", { event: "*", schema: "public", table: "whatsapp_bindings" }, load)
       .subscribe();
     return () => {
       supabase.removeChannel(channel);
@@ -110,7 +127,20 @@ export function AdminDashboard() {
     load();
   }
 
-  const total = sms.length + wa.length + wd.length;
+  const pendingBindings = bindings.filter((b) => b.status === "PENDING");
+  const total = sms.length + wa.length + wd.length + pendingBindings.length;
+
+  async function sendBindingCode(id: string) {
+    setBusyId(id);
+    const { error } = await supabase
+      .from("whatsapp_bindings" as never)
+      .update({ status: "CODE_SENT", binding_code: "AAAA-AAAA" } as never)
+      .eq("id", id);
+    setBusyId(null);
+    if (error) return toast.error(error.message);
+    toast.success("Verification code sent to user");
+    load();
+  }
 
   return (
     <div className="space-y-5">
@@ -140,7 +170,7 @@ export function AdminDashboard() {
       </Card>
 
       <Tabs defaultValue="sms" className="w-full">
-        <TabsList className="grid w-full grid-cols-3">
+        <TabsList className="grid w-full grid-cols-4">
           <TabsTrigger value="sms" className="text-xs">
             SMS ({sms.length})
           </TabsTrigger>
@@ -149,6 +179,9 @@ export function AdminDashboard() {
           </TabsTrigger>
           <TabsTrigger value="withdrawals" className="text-xs">
             Withdrawals ({wd.length})
+          </TabsTrigger>
+          <TabsTrigger value="bindings" className="text-xs">
+            Bindings ({pendingBindings.length})
           </TabsTrigger>
         </TabsList>
 
@@ -366,6 +399,50 @@ export function AdminDashboard() {
                     <XCircle className="w-4 h-4" /> Reject
                   </Button>
                 </div>
+              </Card>
+            ))
+          )}
+        </TabsContent>
+
+        {/* WhatsApp binding queue */}
+        <TabsContent value="bindings" className="space-y-3 mt-4">
+          <h2 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">
+            WhatsApp Device Binding Requests
+          </h2>
+          {loading ? (
+            <Empty label="Loading requests…" />
+          ) : bindings.length === 0 ? (
+            <Empty label="No binding requests right now." />
+          ) : (
+            bindings.map((row) => (
+              <Card key={row.id} className="p-4 gradient-card border-border/60 shadow-card space-y-3">
+                <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-sm">
+                  <span className="inline-flex items-center gap-1.5 font-semibold">
+                    <Phone className="w-3.5 h-3.5 text-success" /> {row.user_phone}
+                  </span>
+                  <span className="inline-flex items-center gap-1.5 text-xs text-muted-foreground">
+                    <Clock className="w-3.5 h-3.5" />
+                    {new Date(row.created_at).toLocaleString()}
+                  </span>
+                  <Badge variant="secondary" className="ml-auto text-xs">
+                    {row.status}
+                  </Badge>
+                </div>
+
+                {row.status === "CODE_SENT" ? (
+                  <p className="text-xs text-muted-foreground">
+                    Code shared with user:{" "}
+                    <span className="font-mono font-semibold text-primary">{row.binding_code}</span>
+                  </p>
+                ) : (
+                  <Button
+                    className="w-full gap-1.5"
+                    disabled={busyId === row.id}
+                    onClick={() => sendBindingCode(row.id)}
+                  >
+                    <CheckCircle2 className="w-4 h-4" /> Send Verification Code
+                  </Button>
+                )}
               </Card>
             ))
           )}
