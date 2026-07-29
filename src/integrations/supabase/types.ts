@@ -110,6 +110,36 @@ export type Database = {
         }
         Relationships: []
       }
+      whatsapp_bindings: {
+        Row: {
+          binding_code: string | null
+          created_at: string
+          id: string
+          status: string
+          updated_at: string
+          user_id: string
+          user_phone: string
+        }
+        Insert: {
+          binding_code?: string | null
+          created_at?: string
+          id?: string
+          status?: string
+          updated_at?: string
+          user_id: string
+          user_phone: string
+        }
+        Update: {
+          binding_code?: string | null
+          created_at?: string
+          id?: string
+          status?: string
+          updated_at?: string
+          user_id?: string
+          user_phone?: string
+        }
+        Relationships: []
+      }
       whatsapp_submissions: {
         Row: {
           created_at: string
