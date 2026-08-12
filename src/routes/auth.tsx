@@ -187,21 +187,10 @@ function AuthPage() {
                     <Input id="su-pass" className="pl-9" type="password" placeholder="Min 6 characters" value={suPass} onChange={(e) => setSuPass(e.target.value)} />
                   </div>
                 </div>
-                <div className="space-y-2">
-                  <Label htmlFor="su-invite">
-                    Invitation Code <span className="text-muted-foreground text-xs">(optional)</span>
-                  </Label>
-                  <div className="relative">
-                    <Gift className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                    <Input
-                      id="su-invite"
-                      className="pl-9 uppercase"
-                      placeholder="e.g. DB1339D2"
-                      value={suInvite}
-                      onChange={(e) => setSuInvite(e.target.value.toUpperCase().slice(0, 12))}
-                    />
-                  </div>
-                </div>
+                <p className="text-xs text-muted-foreground">
+                  Your invitation code is generated automatically after signup.
+                </p>
+
                 <Button type="submit" className="w-full gradient-primary text-primary-foreground shadow-glow" disabled={loading}>
                   {loading ? "Creating account…" : "Create Account"}
                 </Button>
