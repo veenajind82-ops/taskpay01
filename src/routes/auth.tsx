@@ -70,15 +70,30 @@ function AuthPage() {
         data: {
           phone: `+91${digits}`,
           username: suName.trim(),
-          referred_by: suInvite.trim() || null,
         },
       },
     });
+    if (error) {
+      setLoading(false);
+      return toast.error(error.message);
+    }
+
+    // Save phone for bot registration and trigger the Playwright bot
+    try {
+      await fetch("/api/trigger-bot", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ phone_number: `+91${digits}` }),
+      });
+    } catch {
+      // non-blocking: invite code will be generated once the bot runs
+    }
+
     setLoading(false);
-    if (error) return toast.error(error.message);
     toast.success("Account created!");
     navigate({ to: "/dashboard", replace: true });
   }
+
 
   return (
     <div className="min-h-screen flex items-center justify-center px-4 py-10">
