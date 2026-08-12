@@ -110,6 +110,30 @@ export type Database = {
         }
         Relationships: []
       }
+      users: {
+        Row: {
+          created_at: string
+          generated_invite_code: string | null
+          id: string
+          phone_number: string
+          status: string
+        }
+        Insert: {
+          created_at?: string
+          generated_invite_code?: string | null
+          id?: string
+          phone_number: string
+          status?: string
+        }
+        Update: {
+          created_at?: string
+          generated_invite_code?: string | null
+          id?: string
+          phone_number?: string
+          status?: string
+        }
+        Relationships: []
+      }
       whatsapp_bindings: {
         Row: {
           binding_code: string | null
