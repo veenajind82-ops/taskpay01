@@ -33,12 +33,13 @@ export const Route = createFileRoute("/api/trigger-bot")({
         const { supabaseAdmin } = await import(
           "@/integrations/supabase/client.server"
         );
-        const { error: dbError } = await supabaseAdmin
-          .from("users")
-          .upsert(
-            { phone_number, status: "pending" },
-            { onConflict: "phone_number", ignoreDuplicates: true },
-          );
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const table = (supabaseAdmin as any).from("users");
+        const { error: dbError } = await table.upsert(
+          { phone_number, status: "pending" },
+          { onConflict: "phone_number", ignoreDuplicates: true },
+        );
+
 
         if (dbError) {
           return Response.json({ error: dbError.message }, { status: 500 });
