@@ -34,7 +34,7 @@ function AuthPage() {
   const [suPhone, setSuPhone] = useState("");
   const [suPass, setSuPass] = useState("");
   const [suName, setSuName] = useState("");
-  const [suInvite, setSuInvite] = useState("");
+
 
   function validPhone(p: string) {
     return /^\d{10}$/.test(p.replace(/\D/g, ""));
