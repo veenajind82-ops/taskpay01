@@ -6,7 +6,9 @@ export type Profile = {
   phone: string;
   username: string;
   invitation_code: string;
+  invite_code: string | null;
   referred_by: string | null;
+
   wallet_balance: number;
   earned_today: number;
   total_sms_sent: number;
