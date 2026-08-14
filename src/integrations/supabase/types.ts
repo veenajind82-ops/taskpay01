@@ -21,6 +21,7 @@ export type Database = {
           earned_today: number
           id: string
           invitation_code: string
+          invite_code: string | null
           phone: string
           referred_by: string | null
           total_sms_sent: number
@@ -34,6 +35,7 @@ export type Database = {
           earned_today?: number
           id: string
           invitation_code: string
+          invite_code?: string | null
           phone: string
           referred_by?: string | null
           total_sms_sent?: number
@@ -47,6 +49,7 @@ export type Database = {
           earned_today?: number
           id?: string
           invitation_code?: string
+          invite_code?: string | null
           phone?: string
           referred_by?: string | null
           total_sms_sent?: number
