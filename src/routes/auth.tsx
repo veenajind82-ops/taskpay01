@@ -195,7 +195,14 @@ function AuthPage() {
                   </div>
                 </div>
                 <Button type="submit" className="w-full gradient-primary text-primary-foreground shadow-glow" disabled={loading}>
-                  {loading ? "Signing in…" : "Sign In"}
+                  {loading ? (
+                    <span className="flex items-center gap-2">
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                      Signing in…
+                    </span>
+                  ) : (
+                    "Sign In"
+                  )}
                 </Button>
               </form>
             </TabsContent>
