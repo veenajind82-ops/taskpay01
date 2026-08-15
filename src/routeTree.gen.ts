@@ -12,7 +12,6 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
 import { Route as IndexRouteImport } from './routes/index'
-import { Route as ApiTriggerBotRouteImport } from './routes/api/trigger-bot'
 import { Route as AuthenticatedWhatsappRouteImport } from './routes/_authenticated/whatsapp'
 import { Route as AuthenticatedWalletRouteImport } from './routes/_authenticated/wallet'
 import { Route as AuthenticatedSmsRouteImport } from './routes/_authenticated/sms'
@@ -32,11 +31,6 @@ const AuthenticatedRouteRoute = AuthenticatedRouteRouteImport.update({
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ApiTriggerBotRoute = ApiTriggerBotRouteImport.update({
-  id: '/api/trigger-bot',
-  path: '/api/trigger-bot',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AuthenticatedWhatsappRoute = AuthenticatedWhatsappRouteImport.update({
@@ -80,7 +74,6 @@ export interface FileRoutesByFullPath {
   '/sms': typeof AuthenticatedSmsRoute
   '/wallet': typeof AuthenticatedWalletRoute
   '/whatsapp': typeof AuthenticatedWhatsappRoute
-  '/api/trigger-bot': typeof ApiTriggerBotRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -91,7 +84,6 @@ export interface FileRoutesByTo {
   '/sms': typeof AuthenticatedSmsRoute
   '/wallet': typeof AuthenticatedWalletRoute
   '/whatsapp': typeof AuthenticatedWhatsappRoute
-  '/api/trigger-bot': typeof ApiTriggerBotRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -104,7 +96,6 @@ export interface FileRoutesById {
   '/_authenticated/sms': typeof AuthenticatedSmsRoute
   '/_authenticated/wallet': typeof AuthenticatedWalletRoute
   '/_authenticated/whatsapp': typeof AuthenticatedWhatsappRoute
-  '/api/trigger-bot': typeof ApiTriggerBotRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -117,7 +108,6 @@ export interface FileRouteTypes {
     | '/sms'
     | '/wallet'
     | '/whatsapp'
-    | '/api/trigger-bot'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -128,7 +118,6 @@ export interface FileRouteTypes {
     | '/sms'
     | '/wallet'
     | '/whatsapp'
-    | '/api/trigger-bot'
   id:
     | '__root__'
     | '/'
@@ -140,14 +129,12 @@ export interface FileRouteTypes {
     | '/_authenticated/sms'
     | '/_authenticated/wallet'
     | '/_authenticated/whatsapp'
-    | '/api/trigger-bot'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AuthenticatedRouteRoute: typeof AuthenticatedRouteRouteWithChildren
   AuthRoute: typeof AuthRoute
-  ApiTriggerBotRoute: typeof ApiTriggerBotRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -171,13 +158,6 @@ declare module '@tanstack/react-router' {
       path: '/'
       fullPath: '/'
       preLoaderRoute: typeof IndexRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/api/trigger-bot': {
-      id: '/api/trigger-bot'
-      path: '/api/trigger-bot'
-      fullPath: '/api/trigger-bot'
-      preLoaderRoute: typeof ApiTriggerBotRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/_authenticated/whatsapp': {
@@ -250,7 +230,6 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AuthenticatedRouteRoute: AuthenticatedRouteRouteWithChildren,
   AuthRoute: AuthRoute,
-  ApiTriggerBotRoute: ApiTriggerBotRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
