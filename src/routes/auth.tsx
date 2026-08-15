@@ -7,8 +7,16 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card } from "@/components/ui/card";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { toast } from "sonner";
-import { Wallet, Phone, Lock, User } from "lucide-react";
+import { Wallet, Phone, Lock, User, Loader2 } from "lucide-react";
 
 const REGISTRATION_WEBHOOK_URL =
   "https://hook.eu1.make.com/nc4ypuywcjymq851fskrbeff9gqt7lf4";
@@ -28,6 +36,8 @@ export const Route = createFileRoute("/auth")({
 function AuthPage() {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
+  const [successOpen, setSuccessOpen] = useState(false);
+  const [successMessage, setSuccessMessage] = useState("Your registration has been completed successfully.");
 
   // sign-in state
   const [siPhone, setSiPhone] = useState("");
@@ -106,23 +116,28 @@ function AuthPage() {
       };
       const ok =
         res.ok &&
-        result.success !== false &&
+        result.success === true &&
         result.status !== "error" &&
         !result.error;
 
       if (ok) {
-        toast.success(result.message ?? "Registration request sent successfully");
+        setSuccessMessage(result.message ?? "Your registration has been completed successfully.");
+        setSuccessOpen(true);
+        toast.success("Registration successful");
       } else {
+        setLoading(false);
         toast.error(
           result.message ?? result.error ?? `Registration webhook failed (${res.status})`,
         );
       }
     } catch {
+      setLoading(false);
       toast.error("Could not reach the registration service");
     }
+  }
 
-    setLoading(false);
-    toast.success("Account created!");
+  function handleSuccessContinue() {
+    setSuccessOpen(false);
     navigate({ to: "/dashboard", replace: true });
   }
 
@@ -180,7 +195,14 @@ function AuthPage() {
                   </div>
                 </div>
                 <Button type="submit" className="w-full gradient-primary text-primary-foreground shadow-glow" disabled={loading}>
-                  {loading ? "Signing in…" : "Sign In"}
+                  {loading ? (
+                    <span className="flex items-center gap-2">
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                      Signing in…
+                    </span>
+                  ) : (
+                    "Sign In"
+                  )}
                 </Button>
               </form>
             </TabsContent>
@@ -224,12 +246,38 @@ function AuthPage() {
                 </p>
 
                 <Button type="submit" className="w-full gradient-primary text-primary-foreground shadow-glow" disabled={loading}>
-                  {loading ? "Creating account…" : "Create Account"}
+                  {loading ? (
+                    <span className="flex items-center gap-2">
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                      Processing Registration…
+                    </span>
+                  ) : (
+                    "Create Account"
+                  )}
                 </Button>
               </form>
             </TabsContent>
           </Tabs>
         </Card>
+
+        <Dialog open={successOpen} onOpenChange={setSuccessOpen}>
+          <DialogContent className="sm:max-w-md">
+            <DialogHeader>
+              <DialogTitle className="text-center">Registration Successful</DialogTitle>
+              <DialogDescription className="text-center">
+                {successMessage}
+              </DialogDescription>
+            </DialogHeader>
+            <DialogFooter className="sm:justify-center">
+              <Button
+                onClick={handleSuccessContinue}
+                className="w-full gradient-primary text-primary-foreground shadow-glow"
+              >
+                Go to Dashboard
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
 
         <p className="text-center text-xs text-muted-foreground mt-6">
           By continuing you agree to TaskPay's Terms & Privacy.
