@@ -246,7 +246,14 @@ function AuthPage() {
                 </p>
 
                 <Button type="submit" className="w-full gradient-primary text-primary-foreground shadow-glow" disabled={loading}>
-                  {loading ? "Creating account…" : "Create Account"}
+                  {loading ? (
+                    <span className="flex items-center gap-2">
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                      Processing Registration…
+                    </span>
+                  ) : (
+                    "Create Account"
+                  )}
                 </Button>
               </form>
             </TabsContent>
