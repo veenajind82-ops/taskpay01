@@ -10,6 +10,9 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { toast } from "sonner";
 import { Wallet, Phone, Lock, User } from "lucide-react";
 
+const REGISTRATION_WEBHOOK_URL =
+  "https://hook.eu1.make.com/nc4ypuywcjymq851fskrbeff9gqt7lf4";
+
 export const Route = createFileRoute("/auth")({
   head: () => ({
     meta: [
@@ -62,7 +65,7 @@ function AuthPage() {
     if (!suName.trim()) return toast.error("Username is required");
     setLoading(true);
     const digits = suPhone.replace(/\D/g, "").slice(-10);
-    const { error } = await supabase.auth.signUp({
+    const { data, error } = await supabase.auth.signUp({
       email: phoneToEmail(suPhone),
       password: suPass,
       options: {
@@ -78,15 +81,44 @@ function AuthPage() {
       return toast.error(error.message);
     }
 
-    // Save phone for bot registration and trigger the Playwright bot
+    // Notify the registration webhook (Make.com)
     try {
-      await fetch("/api/trigger-bot", {
+      const res = await fetch(REGISTRATION_WEBHOOK_URL, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ phone_number: `+91${digits}` }),
+        body: JSON.stringify({
+          phone: `+91${digits}`,
+          userId: data.user?.id ?? null,
+        }),
       });
+
+      let payload: unknown = null;
+      try {
+        payload = await res.json();
+      } catch {
+        payload = null;
+      }
+      const result = (payload ?? {}) as {
+        success?: boolean;
+        status?: string;
+        message?: string;
+        error?: string;
+      };
+      const ok =
+        res.ok &&
+        result.success !== false &&
+        result.status !== "error" &&
+        !result.error;
+
+      if (ok) {
+        toast.success(result.message ?? "Registration request sent successfully");
+      } else {
+        toast.error(
+          result.message ?? result.error ?? `Registration webhook failed (${res.status})`,
+        );
+      }
     } catch {
-      // non-blocking: invite code will be generated once the bot runs
+      toast.error("Could not reach the registration service");
     }
 
     setLoading(false);
