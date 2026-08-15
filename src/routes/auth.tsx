@@ -36,6 +36,8 @@ export const Route = createFileRoute("/auth")({
 function AuthPage() {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
+  const [successOpen, setSuccessOpen] = useState(false);
+  const [successMessage, setSuccessMessage] = useState("Your registration has been completed successfully.");
 
   // sign-in state
   const [siPhone, setSiPhone] = useState("");
