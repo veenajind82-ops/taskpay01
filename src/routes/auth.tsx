@@ -7,8 +7,16 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card } from "@/components/ui/card";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { toast } from "sonner";
-import { Wallet, Phone, Lock, User } from "lucide-react";
+import { Wallet, Phone, Lock, User, Loader2 } from "lucide-react";
 
 const REGISTRATION_WEBHOOK_URL =
   "https://hook.eu1.make.com/nc4ypuywcjymq851fskrbeff9gqt7lf4";
