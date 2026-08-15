@@ -260,6 +260,25 @@ function AuthPage() {
           </Tabs>
         </Card>
 
+        <Dialog open={successOpen} onOpenChange={setSuccessOpen}>
+          <DialogContent className="sm:max-w-md">
+            <DialogHeader>
+              <DialogTitle className="text-center">Registration Successful</DialogTitle>
+              <DialogDescription className="text-center">
+                {successMessage}
+              </DialogDescription>
+            </DialogHeader>
+            <DialogFooter className="sm:justify-center">
+              <Button
+                onClick={handleSuccessContinue}
+                className="w-full gradient-primary text-primary-foreground shadow-glow"
+              >
+                Go to Dashboard
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
         <p className="text-center text-xs text-muted-foreground mt-6">
           By continuing you agree to TaskPay's Terms & Privacy.
         </p>
