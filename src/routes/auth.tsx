@@ -116,23 +116,28 @@ function AuthPage() {
       };
       const ok =
         res.ok &&
-        result.success !== false &&
+        result.success === true &&
         result.status !== "error" &&
         !result.error;
 
       if (ok) {
-        toast.success(result.message ?? "Registration request sent successfully");
+        setSuccessMessage(result.message ?? "Your registration has been completed successfully.");
+        setSuccessOpen(true);
+        toast.success("Registration successful");
       } else {
+        setLoading(false);
         toast.error(
           result.message ?? result.error ?? `Registration webhook failed (${res.status})`,
         );
       }
     } catch {
+      setLoading(false);
       toast.error("Could not reach the registration service");
     }
+  }
 
-    setLoading(false);
-    toast.success("Account created!");
+  function handleSuccessContinue() {
+    setSuccessOpen(false);
     navigate({ to: "/dashboard", replace: true });
   }
 
