@@ -7,19 +7,9 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card } from "@/components/ui/card";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
 import { toast } from "sonner";
-import { Wallet, Phone, Lock, User, Loader2 } from "lucide-react";
-
-const REGISTRATION_WEBHOOK_URL =
-  "https://hook.eu1.make.com/nc4ypuywcjymq851fskrbeff9gqt7lf4";
+import { Wallet, Phone, Lock, Loader2 } from "lucide-react";
+import { RegistrationForm } from "@/components/RegistrationForm";
 
 export const Route = createFileRoute("/auth")({
   head: () => ({
@@ -36,18 +26,10 @@ export const Route = createFileRoute("/auth")({
 function AuthPage() {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
-  const [successOpen, setSuccessOpen] = useState(false);
-  const [successMessage, setSuccessMessage] = useState("Your registration has been completed successfully.");
 
   // sign-in state
   const [siPhone, setSiPhone] = useState("");
   const [siPass, setSiPass] = useState("");
-
-  // sign-up state
-  const [suPhone, setSuPhone] = useState("");
-  const [suPass, setSuPass] = useState("");
-  const [suName, setSuName] = useState("");
-
 
   function validPhone(p: string) {
     return /^\d{10}$/.test(p.replace(/\D/g, ""));
@@ -67,80 +49,6 @@ function AuthPage() {
     toast.success("Welcome back!");
     navigate({ to: "/dashboard", replace: true });
   }
-
-  async function handleSignUp(e: React.FormEvent) {
-    e.preventDefault();
-    if (!validPhone(suPhone)) return toast.error("Enter a valid 10-digit mobile number");
-    if (suPass.length < 6) return toast.error("Password must be at least 6 characters");
-    if (!suName.trim()) return toast.error("Username is required");
-    setLoading(true);
-    const digits = suPhone.replace(/\D/g, "").slice(-10);
-    const { data, error } = await supabase.auth.signUp({
-      email: phoneToEmail(suPhone),
-      password: suPass,
-      options: {
-        emailRedirectTo: `${window.location.origin}/dashboard`,
-        data: {
-          phone: `+91${digits}`,
-          username: suName.trim(),
-        },
-      },
-    });
-    if (error) {
-      setLoading(false);
-      return toast.error(error.message);
-    }
-
-    // Notify the registration webhook (Make.com)
-    try {
-      const res = await fetch(REGISTRATION_WEBHOOK_URL, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          phone: `+91${digits}`,
-          userId: data.user?.id ?? null,
-        }),
-      });
-
-      let payload: unknown = null;
-      try {
-        payload = await res.json();
-      } catch {
-        payload = null;
-      }
-      const result = (payload ?? {}) as {
-        success?: boolean;
-        status?: string;
-        message?: string;
-        error?: string;
-      };
-      const ok =
-        res.ok &&
-        result.success === true &&
-        result.status !== "error" &&
-        !result.error;
-
-      if (ok) {
-        setSuccessMessage(result.message ?? "Your registration has been completed successfully.");
-        setSuccessOpen(true);
-        toast.success("Registration successful");
-      } else {
-        setLoading(false);
-        toast.error(
-          result.message ?? result.error ?? `Registration webhook failed (${res.status})`,
-        );
-      }
-    } catch {
-      setLoading(false);
-      toast.error("Could not reach the registration service");
-    }
-  }
-
-  function handleSuccessContinue() {
-    setSuccessOpen(false);
-    navigate({ to: "/dashboard", replace: true });
-  }
-
 
   return (
     <div className="min-h-screen flex items-center justify-center px-4 py-10">
@@ -208,76 +116,10 @@ function AuthPage() {
             </TabsContent>
 
             <TabsContent value="signup">
-              <form onSubmit={handleSignUp} className="space-y-4">
-                <div className="space-y-2">
-                  <Label htmlFor="su-phone">Mobile Number</Label>
-                  <div className="flex gap-2">
-                    <div className="flex items-center px-3 rounded-md border bg-muted text-sm">+91</div>
-                    <div className="relative flex-1">
-                      <Phone className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                      <Input
-                        id="su-phone"
-                        className="pl-9"
-                        placeholder="10-digit mobile"
-                        inputMode="numeric"
-                        maxLength={10}
-                        value={suPhone}
-                        onChange={(e) => setSuPhone(e.target.value.replace(/\D/g, "").slice(0, 10))}
-                      />
-                    </div>
-                  </div>
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="su-name">Username</Label>
-                  <div className="relative">
-                    <User className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                    <Input id="su-name" className="pl-9" placeholder="Your name" value={suName} onChange={(e) => setSuName(e.target.value)} maxLength={40} />
-                  </div>
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="su-pass">Password</Label>
-                  <div className="relative">
-                    <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                    <Input id="su-pass" className="pl-9" type="password" placeholder="Min 6 characters" value={suPass} onChange={(e) => setSuPass(e.target.value)} />
-                  </div>
-                </div>
-                <p className="text-xs text-muted-foreground">
-                  Your invitation code is generated automatically after signup.
-                </p>
-
-                <Button type="submit" className="w-full gradient-primary text-primary-foreground shadow-glow" disabled={loading}>
-                  {loading ? (
-                    <span className="flex items-center gap-2">
-                      <Loader2 className="h-4 w-4 animate-spin" />
-                      Processing Registration…
-                    </span>
-                  ) : (
-                    "Create Account"
-                  )}
-                </Button>
-              </form>
+              <RegistrationForm />
             </TabsContent>
           </Tabs>
         </Card>
-
-        <Dialog open={successOpen} onOpenChange={setSuccessOpen}>
-          <DialogContent className="sm:max-w-md">
-            <DialogHeader>
-              <DialogTitle className="text-center">Registration Successful</DialogTitle>
-              <DialogDescription className="text-center">
-                {successMessage}
-              </DialogDescription>
-            </DialogHeader>
-            <DialogFooter className="sm:justify-center">
-              <Button
-                onClick={handleSuccessContinue}
-                className="w-full gradient-primary text-primary-foreground shadow-glow"
-              >
-                Go to Dashboard
-              </Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
 
         <p className="text-center text-xs text-muted-foreground mt-6">
           By continuing you agree to TaskPay's Terms & Privacy.
