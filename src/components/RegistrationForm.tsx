@@ -183,9 +183,10 @@ export function RegistrationForm() {
                 </div>
                 <div className="flex items-center gap-2">
                   <img
-                    src={captchaSrc}
+                    src={captchaSrc || GET_CAPTCHA_URL}
                     alt="Captcha"
-                    className="h-10 w-28 rounded-md border object-cover bg-white"
+                    onClick={fetchCaptcha}
+                    className="h-10 w-28 rounded-md border object-cover bg-white cursor-pointer"
                   />
                   <button
                     type="button"
