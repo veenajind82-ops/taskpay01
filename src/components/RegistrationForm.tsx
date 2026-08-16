@@ -15,16 +15,30 @@ export function RegistrationForm() {
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [captcha, setCaptcha] = useState("");
-  const [captchaSrc, setCaptchaSrc] = useState(GET_CAPTCHA_URL);
+  const [captchaSrc, setCaptchaSrc] = useState<string>("");
   const [loading, setLoading] = useState(false);
 
+  const fetchCaptcha = async () => {
+    setCaptcha("");
+    try {
+      const res = await fetch(`${GET_CAPTCHA_URL}?t=${Date.now()}`);
+      const data = await res.text();
+      if (data.startsWith("data:image")) {
+        setCaptchaSrc(data);
+      } else {
+        setCaptchaSrc(`data:image/png;base64,${data.trim()}`);
+      }
+    } catch {
+      setCaptchaSrc("");
+    }
+  };
+
   useEffect(() => {
-    setCaptchaSrc(GET_CAPTCHA_URL);
+    fetchCaptcha();
   }, []);
 
   const refreshCaptcha = () => {
-    setCaptcha("");
-    setCaptchaSrc(`${GET_CAPTCHA_URL}?t=${Date.now()}`);
+    fetchCaptcha();
   };
 
   const handlePhoneChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -169,9 +183,10 @@ export function RegistrationForm() {
                 </div>
                 <div className="flex items-center gap-2">
                   <img
-                    src={captchaSrc}
+                    src={captchaSrc || GET_CAPTCHA_URL}
                     alt="Captcha"
-                    className="h-10 w-28 rounded-md border object-cover bg-white"
+                    onClick={fetchCaptcha}
+                    className="h-10 w-28 rounded-md border object-cover bg-white cursor-pointer"
                   />
                   <button
                     type="button"
