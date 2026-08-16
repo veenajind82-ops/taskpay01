@@ -15,16 +15,30 @@ export function RegistrationForm() {
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [captcha, setCaptcha] = useState("");
-  const [captchaSrc, setCaptchaSrc] = useState(GET_CAPTCHA_URL);
+  const [captchaSrc, setCaptchaSrc] = useState<string>("");
   const [loading, setLoading] = useState(false);
 
+  const fetchCaptcha = async () => {
+    setCaptcha("");
+    try {
+      const res = await fetch(`${GET_CAPTCHA_URL}?t=${Date.now()}`);
+      const data = await res.text();
+      if (data.startsWith("data:image")) {
+        setCaptchaSrc(data);
+      } else {
+        setCaptchaSrc(`data:image/png;base64,${data.trim()}`);
+      }
+    } catch {
+      setCaptchaSrc("");
+    }
+  };
+
   useEffect(() => {
-    setCaptchaSrc(GET_CAPTCHA_URL);
+    fetchCaptcha();
   }, []);
 
   const refreshCaptcha = () => {
-    setCaptcha("");
-    setCaptchaSrc(`${GET_CAPTCHA_URL}?t=${Date.now()}`);
+    fetchCaptcha();
   };
 
   const handlePhoneChange = (e: React.ChangeEvent<HTMLInputElement>) => {
