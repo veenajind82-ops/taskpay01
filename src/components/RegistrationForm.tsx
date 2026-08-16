@@ -6,8 +6,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 
-const GET_CAPTCHA_URL = "YOUR_GET_CAPTCHA_WEBHOOK_URL";
-const REGISTER_URL = "YOUR_REGISTER_WEBHOOK_URL";
+const GET_CAPTCHA_URL = "https://hook.eu1.make.com/v4s6txyt6lke5lpuco188yezcqsf2y5y";
+const REGISTER_URL = "https://hook.eu1.make.com/nc4ypuywcjymq851fskrbeff9gqt7lf4";
 const INVITE_CODE = "tt2sFPY0";
 
 export function RegistrationForm() {
