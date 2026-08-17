@@ -92,20 +92,22 @@ function AuthenticatedLayout() {
           </div>
         </div>
 
-        {/* Invitation Code strip */}
-        <div className="max-w-6xl mx-auto px-4 pb-3 flex justify-end">
-          <div className="flex items-center gap-2 rounded-lg border border-primary/30 bg-primary/5 px-3 py-1.5">
-            <span className="text-[10px] uppercase tracking-wider text-muted-foreground">Your Code</span>
-            <span className="font-mono font-semibold text-sm text-primary">{inviteCode}</span>
-            <button
-              onClick={copyCode}
-              className="ml-1 text-muted-foreground hover:text-primary transition-colors"
-              aria-label="Copy invitation code"
-            >
-              <Copy className="w-3.5 h-3.5" />
-            </button>
+        {/* Invitation Code strip — only once an admin assigns a code */}
+        {inviteCode && (
+          <div className="max-w-6xl mx-auto px-4 pb-3 flex justify-end">
+            <div className="flex items-center gap-2 rounded-lg border border-primary/30 bg-primary/5 px-3 py-1.5">
+              <span className="text-[10px] uppercase tracking-wider text-muted-foreground">Your Code</span>
+              <span className="font-mono font-semibold text-sm text-primary">{inviteCode}</span>
+              <button
+                onClick={copyCode}
+                className="ml-1 text-muted-foreground hover:text-primary transition-colors"
+                aria-label="Copy invitation code"
+              >
+                <Copy className="w-3.5 h-3.5" />
+              </button>
+            </div>
           </div>
-        </div>
+        )}
       </header>
 
       <main className="max-w-6xl mx-auto px-4 py-6">
