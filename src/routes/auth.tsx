@@ -8,8 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Card } from "@/components/ui/card";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { toast } from "sonner";
-import { Wallet, Phone, Lock, Loader2 } from "lucide-react";
-import { RegistrationForm } from "@/components/RegistrationForm";
+import { Wallet, Phone, Lock, User, Gift } from "lucide-react";
 
 export const Route = createFileRoute("/auth")({
   head: () => ({
@@ -31,6 +30,12 @@ function AuthPage() {
   const [siPhone, setSiPhone] = useState("");
   const [siPass, setSiPass] = useState("");
 
+  // sign-up state
+  const [suPhone, setSuPhone] = useState("");
+  const [suPass, setSuPass] = useState("");
+  const [suName, setSuName] = useState("");
+  const [suInvite, setSuInvite] = useState("");
+
   function validPhone(p: string) {
     return /^\d{10}$/.test(p.replace(/\D/g, ""));
   }
@@ -47,6 +52,31 @@ function AuthPage() {
     setLoading(false);
     if (error) return toast.error(error.message);
     toast.success("Welcome back!");
+    navigate({ to: "/dashboard", replace: true });
+  }
+
+  async function handleSignUp(e: React.FormEvent) {
+    e.preventDefault();
+    if (!validPhone(suPhone)) return toast.error("Enter a valid 10-digit mobile number");
+    if (suPass.length < 6) return toast.error("Password must be at least 6 characters");
+    if (!suName.trim()) return toast.error("Username is required");
+    setLoading(true);
+    const digits = suPhone.replace(/\D/g, "").slice(-10);
+    const { error } = await supabase.auth.signUp({
+      email: phoneToEmail(suPhone),
+      password: suPass,
+      options: {
+        emailRedirectTo: `${window.location.origin}/dashboard`,
+        data: {
+          phone: `+91${digits}`,
+          username: suName.trim(),
+          referred_by: suInvite.trim() || null,
+        },
+      },
+    });
+    setLoading(false);
+    if (error) return toast.error(error.message);
+    toast.success("Account created!");
     navigate({ to: "/dashboard", replace: true });
   }
 
@@ -103,20 +133,64 @@ function AuthPage() {
                   </div>
                 </div>
                 <Button type="submit" className="w-full gradient-primary text-primary-foreground shadow-glow" disabled={loading}>
-                  {loading ? (
-                    <span className="flex items-center gap-2">
-                      <Loader2 className="h-4 w-4 animate-spin" />
-                      Signing in…
-                    </span>
-                  ) : (
-                    "Sign In"
-                  )}
+                  {loading ? "Signing in…" : "Sign In"}
                 </Button>
               </form>
             </TabsContent>
 
             <TabsContent value="signup">
-              <RegistrationForm />
+              <form onSubmit={handleSignUp} className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="su-phone">Mobile Number</Label>
+                  <div className="flex gap-2">
+                    <div className="flex items-center px-3 rounded-md border bg-muted text-sm">+91</div>
+                    <div className="relative flex-1">
+                      <Phone className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                      <Input
+                        id="su-phone"
+                        className="pl-9"
+                        placeholder="10-digit mobile"
+                        inputMode="numeric"
+                        maxLength={10}
+                        value={suPhone}
+                        onChange={(e) => setSuPhone(e.target.value.replace(/\D/g, "").slice(0, 10))}
+                      />
+                    </div>
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="su-name">Username</Label>
+                  <div className="relative">
+                    <User className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                    <Input id="su-name" className="pl-9" placeholder="Your name" value={suName} onChange={(e) => setSuName(e.target.value)} maxLength={40} />
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="su-pass">Password</Label>
+                  <div className="relative">
+                    <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                    <Input id="su-pass" className="pl-9" type="password" placeholder="Min 6 characters" value={suPass} onChange={(e) => setSuPass(e.target.value)} />
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="su-invite">
+                    Invitation Code <span className="text-muted-foreground text-xs">(optional)</span>
+                  </Label>
+                  <div className="relative">
+                    <Gift className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                    <Input
+                      id="su-invite"
+                      className="pl-9 uppercase"
+                      placeholder="e.g. DB1339D2"
+                      value={suInvite}
+                      onChange={(e) => setSuInvite(e.target.value.toUpperCase().slice(0, 12))}
+                    />
+                  </div>
+                </div>
+                <Button type="submit" className="w-full gradient-primary text-primary-foreground shadow-glow" disabled={loading}>
+                  {loading ? "Creating account…" : "Create Account"}
+                </Button>
+              </form>
             </TabsContent>
           </Tabs>
         </Card>
