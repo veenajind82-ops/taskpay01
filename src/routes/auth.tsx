@@ -152,36 +152,18 @@ function AuthPage() {
                   </div>
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="su-name">Username</Label>
-                  <div className="relative">
-                    <User className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                    <Input id="su-name" className="pl-9" placeholder="Your name" value={suName} onChange={(e) => setSuName(e.target.value)} maxLength={40} />
-                  </div>
-                </div>
-                <div className="space-y-2">
                   <Label htmlFor="su-pass">Password</Label>
                   <div className="relative">
                     <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                     <Input id="su-pass" className="pl-9" type="password" placeholder="Min 6 characters" value={suPass} onChange={(e) => setSuPass(e.target.value)} />
                   </div>
                 </div>
-                <div className="space-y-2">
-                  <Label htmlFor="su-invite">
-                    Invitation Code <span className="text-muted-foreground text-xs">(optional)</span>
-                  </Label>
-                  <div className="relative">
-                    <Gift className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                    <Input
-                      id="su-invite"
-                      className="pl-9 uppercase"
-                      placeholder="e.g. DB1339D2"
-                      value={suInvite}
-                      onChange={(e) => setSuInvite(e.target.value.toUpperCase().slice(0, 12))}
-                    />
-                  </div>
-                </div>
+                <p className="text-xs text-muted-foreground">
+                  New accounts are reviewed by an admin. You'll get your invitation code once your account is
+                  activated (within 24 hours).
+                </p>
                 <Button type="submit" className="w-full gradient-primary text-primary-foreground shadow-glow" disabled={loading}>
-                  {loading ? "Creating account…" : "Create Account"}
+                  {loading ? "Submitting request…" : "Create Account"}
                 </Button>
               </form>
             </TabsContent>
