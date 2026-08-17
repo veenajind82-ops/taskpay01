@@ -11,6 +11,8 @@ export type Profile = {
   earned_today: number;
   total_sms_sent: number;
   active_whatsapp: number;
+  status: string;
+  created_at: string;
 };
 
 export function phoneToEmail(phone: string) {
@@ -25,6 +27,7 @@ export function useProfile() {
 
   useEffect(() => {
     let mounted = true;
+
     async function load() {
       const { data: userData } = await supabase.auth.getUser();
       if (!userData.user) {
@@ -40,10 +43,29 @@ export function useProfile() {
         setProfile((data as Profile | null) ?? null);
         setLoading(false);
       }
+      return userData.user.id;
     }
-    load();
+
+    let channel: ReturnType<typeof supabase.channel> | null = null;
+
+    load().then((userId) => {
+      if (!userId || !mounted) return;
+      // keep the approval status / invitation code live
+      channel = supabase
+        .channel(`profile-${userId}`)
+        .on(
+          "postgres_changes",
+          { event: "UPDATE", schema: "public", table: "profiles", filter: `id=eq.${userId}` },
+          (payload) => {
+            if (mounted) setProfile(payload.new as unknown as Profile);
+          },
+        )
+        .subscribe();
+    });
+
     return () => {
       mounted = false;
+      if (channel) supabase.removeChannel(channel);
     };
   }, []);
 

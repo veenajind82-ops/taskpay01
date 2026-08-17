@@ -1,7 +1,8 @@
 import { createFileRoute, Outlet, redirect, Link, useNavigate, useLocation } from "@tanstack/react-router";
 import { supabase } from "@/integrations/supabase/client";
 import { useProfile } from "@/lib/profile";
-import { last10, MASTER_ADMIN_PHONE } from "@/lib/admin-access";
+import { useUserRole } from "@/lib/role";
+import { PendingApproval } from "@/components/PendingApproval";
 
 import { Copy, User as UserIcon, Wallet, LayoutDashboard, MessageSquare, MessageCircle, LogOut, Shield } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -18,12 +19,13 @@ export const Route = createFileRoute("/_authenticated")({
 });
 
 function AuthenticatedLayout() {
-  const { profile } = useProfile();
+  const { profile, loading } = useProfile();
+  const role = useUserRole();
   const navigate = useNavigate();
   const location = useLocation();
 
   const walletBalance = profile?.wallet_balance ?? 0;
-  const inviteCode = profile?.invitation_code ?? "DB1339D2";
+  const inviteCode = profile?.invitation_code ?? "";
   const username = profile?.username ?? "User";
 
   async function handleSignOut() {
@@ -33,18 +35,29 @@ function AuthenticatedLayout() {
   }
 
   function copyCode() {
+    if (!inviteCode) return;
     navigator.clipboard.writeText(inviteCode);
     toast.success("Invitation code copied");
   }
 
-  const isMasterAdmin = last10(profile?.phone) === MASTER_ADMIN_PHONE;
+  // Account stays locked until an admin approves it with an invitation code.
+  if (!loading && profile && profile.status !== "active") {
+    return (
+      <PendingApproval
+        createdAt={profile.created_at}
+        phone={profile.phone}
+        rejected={profile.status === "rejected"}
+        onSignOut={handleSignOut}
+      />
+    );
+  }
 
   const navItems = [
     { to: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
     { to: "/sms", label: "SMS Tasks", icon: MessageSquare },
     { to: "/whatsapp", label: "WhatsApp", icon: MessageCircle },
     { to: "/wallet", label: "Wallet", icon: Wallet },
-    ...(isMasterAdmin ? [{ to: "/admin", label: "Admin", icon: Shield }] : []),
+    ...(role === "admin" ? [{ to: "/admin", label: "Admin Panel", icon: Shield }] : []),
   ];
 
   const isActive = (to: string) => location.pathname === to || location.pathname.startsWith(to + "/");
@@ -79,20 +92,22 @@ function AuthenticatedLayout() {
           </div>
         </div>
 
-        {/* Invitation Code strip */}
-        <div className="max-w-6xl mx-auto px-4 pb-3 flex justify-end">
-          <div className="flex items-center gap-2 rounded-lg border border-primary/30 bg-primary/5 px-3 py-1.5">
-            <span className="text-[10px] uppercase tracking-wider text-muted-foreground">Your Code</span>
-            <span className="font-mono font-semibold text-sm text-primary">{inviteCode}</span>
-            <button
-              onClick={copyCode}
-              className="ml-1 text-muted-foreground hover:text-primary transition-colors"
-              aria-label="Copy invitation code"
-            >
-              <Copy className="w-3.5 h-3.5" />
-            </button>
+        {/* Invitation Code strip — only once an admin assigns a code */}
+        {inviteCode && (
+          <div className="max-w-6xl mx-auto px-4 pb-3 flex justify-end">
+            <div className="flex items-center gap-2 rounded-lg border border-primary/30 bg-primary/5 px-3 py-1.5">
+              <span className="text-[10px] uppercase tracking-wider text-muted-foreground">Your Code</span>
+              <span className="font-mono font-semibold text-sm text-primary">{inviteCode}</span>
+              <button
+                onClick={copyCode}
+                className="ml-1 text-muted-foreground hover:text-primary transition-colors"
+                aria-label="Copy invitation code"
+              >
+                <Copy className="w-3.5 h-3.5" />
+              </button>
+            </div>
           </div>
-        </div>
+        )}
       </header>
 
       <main className="max-w-6xl mx-auto px-4 py-6">

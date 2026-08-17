@@ -5,7 +5,9 @@ import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { Input } from "@/components/ui/input";
 import {
+  UserCheck,
   CheckCircle2,
   XCircle,
   ShieldCheck,
@@ -45,6 +47,15 @@ type Binding = {
   created_at: string;
 };
 
+type PendingUser = {
+  id: string;
+  phone: string;
+  username: string;
+  status: string;
+  invitation_code: string;
+  created_at: string;
+};
+
 type WithdrawalRequest = {
   id: string;
   user_id: string;
@@ -69,11 +80,13 @@ export function AdminDashboard() {
   const [wa, setWa] = useState<WhatsappSubmission[]>([]);
   const [wd, setWd] = useState<WithdrawalRequest[]>([]);
   const [bindings, setBindings] = useState<Binding[]>([]);
+  const [users, setUsers] = useState<PendingUser[]>([]);
+  const [codes, setCodes] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(true);
   const [busyId, setBusyId] = useState<string | null>(null);
 
   const load = useCallback(async () => {
-    const [smsRes, waRes, wdRes, bindRes] = await Promise.all([
+    const [smsRes, waRes, wdRes, bindRes, usersRes] = await Promise.all([
       supabase
         .from("sms_submissions" as never)
         .select("*")
@@ -94,6 +107,11 @@ export function AdminDashboard() {
         .select("*")
         .neq("status", "VERIFIED")
         .order("created_at", { ascending: false }),
+      supabase
+        .from("profiles" as never)
+        .select("id, phone, username, status, invitation_code, created_at")
+        .eq("status", "pending_approval")
+        .order("created_at", { ascending: false }),
     ]);
     const err = smsRes.error || waRes.error || wdRes.error || bindRes.error;
     if (err) toast.error(err.message);
@@ -101,6 +119,7 @@ export function AdminDashboard() {
     setWa((waRes.data as unknown as WhatsappSubmission[]) ?? []);
     setWd((wdRes.data as unknown as WithdrawalRequest[]) ?? []);
     setBindings((bindRes.data as unknown as Binding[]) ?? []);
+    setUsers((usersRes.data as unknown as PendingUser[]) ?? []);
     setLoading(false);
   }, []);
 
@@ -112,6 +131,7 @@ export function AdminDashboard() {
       .on("postgres_changes", { event: "*", schema: "public", table: "whatsapp_submissions" }, load)
       .on("postgres_changes", { event: "*", schema: "public", table: "withdrawal_requests" }, load)
       .on("postgres_changes", { event: "*", schema: "public", table: "whatsapp_bindings" }, load)
+      .on("postgres_changes", { event: "*", schema: "public", table: "profiles" }, load)
       .subscribe();
     return () => {
       supabase.removeChannel(channel);
@@ -128,7 +148,14 @@ export function AdminDashboard() {
   }
 
   const pendingBindings = bindings.filter((b) => b.status === "PENDING");
-  const total = sms.length + wa.length + wd.length + pendingBindings.length;
+  const total = sms.length + wa.length + wd.length + pendingBindings.length + users.length;
+
+  function randomCode() {
+    let out = "";
+    const chars = "ABCDEFGHJKMNPQRSTUVWXYZ23456789";
+    for (let i = 0; i < 8; i++) out += chars[Math.floor(Math.random() * chars.length)];
+    return out;
+  }
 
   async function sendBindingCode(id: string) {
     setBusyId(id);
@@ -169,8 +196,11 @@ export function AdminDashboard() {
         </div>
       </Card>
 
-      <Tabs defaultValue="sms" className="w-full">
-        <TabsList className="grid w-full grid-cols-4">
+      <Tabs defaultValue="users" className="w-full">
+        <TabsList className="grid w-full grid-cols-5">
+          <TabsTrigger value="users" className="text-xs">
+            Users ({users.length})
+          </TabsTrigger>
           <TabsTrigger value="sms" className="text-xs">
             SMS ({sms.length})
           </TabsTrigger>
@@ -184,6 +214,79 @@ export function AdminDashboard() {
             Bindings ({pendingBindings.length})
           </TabsTrigger>
         </TabsList>
+
+        {/* User approval queue */}
+        <TabsContent value="users" className="space-y-3 mt-4">
+          <h2 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">
+            Pending Registrations
+          </h2>
+          {loading ? (
+            <Empty label="Loading registrations…" />
+          ) : users.length === 0 ? (
+            <Empty label="No pending registrations right now." />
+          ) : (
+            users.map((row) => (
+              <Card key={row.id} className="p-4 gradient-card border-border/60 shadow-card space-y-3">
+                <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-sm">
+                  <span className="inline-flex items-center gap-1.5 font-semibold">
+                    <Phone className="w-3.5 h-3.5 text-primary" /> +91 {row.phone.replace(/\D/g, "").slice(-10)}
+                  </span>
+                  <span className="inline-flex items-center gap-1.5 text-xs text-muted-foreground">
+                    <Clock className="w-3.5 h-3.5" />
+                    {new Date(row.created_at).toLocaleString()}
+                  </span>
+                  <Badge variant="secondary" className="ml-auto text-xs">
+                    pending_approval
+                  </Badge>
+                </div>
+
+                <div className="flex gap-2">
+                  <Input
+                    className="uppercase font-mono"
+                    placeholder="Assign invitation code"
+                    maxLength={12}
+                    value={codes[row.id] ?? ""}
+                    onChange={(e) =>
+                      setCodes((c) => ({ ...c, [row.id]: e.target.value.toUpperCase().slice(0, 12) }))
+                    }
+                  />
+                  <Button
+                    variant="secondary"
+                    className="shrink-0 text-xs"
+                    onClick={() => setCodes((c) => ({ ...c, [row.id]: randomCode() }))}
+                  >
+                    Generate
+                  </Button>
+                </div>
+
+                <div className="flex gap-2">
+                  <Button
+                    className="flex-1 gap-1.5"
+                    disabled={busyId === row.id || !(codes[row.id] ?? "").trim()}
+                    onClick={() =>
+                      run(
+                        row.id,
+                        "approve_user",
+                        { _user_id: row.id, _invitation_code: (codes[row.id] ?? "").trim() },
+                        "User approved and activated",
+                      )
+                    }
+                  >
+                    <UserCheck className="w-4 h-4" /> Approve &amp; Activate
+                  </Button>
+                  <Button
+                    variant="destructive"
+                    className="gap-1.5"
+                    disabled={busyId === row.id}
+                    onClick={() => run(row.id, "reject_user", { _user_id: row.id }, "Registration rejected")}
+                  >
+                    <XCircle className="w-4 h-4" /> Reject
+                  </Button>
+                </div>
+              </Card>
+            ))
+          )}
+        </TabsContent>
 
         {/* SMS queue */}
         <TabsContent value="sms" className="space-y-3 mt-4">

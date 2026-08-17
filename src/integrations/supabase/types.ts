@@ -21,8 +21,10 @@ export type Database = {
           earned_today: number
           id: string
           invitation_code: string
+          invite_code: string | null
           phone: string
           referred_by: string | null
+          status: string
           total_sms_sent: number
           updated_at: string
           username: string
@@ -33,12 +35,14 @@ export type Database = {
           created_at?: string
           earned_today?: number
           id: string
-          invitation_code: string
+          invitation_code?: string
+          invite_code?: string | null
           phone: string
           referred_by?: string | null
+          status?: string
           total_sms_sent?: number
           updated_at?: string
-          username: string
+          username?: string
           wallet_balance?: number
         }
         Update: {
@@ -47,8 +51,10 @@ export type Database = {
           earned_today?: number
           id?: string
           invitation_code?: string
+          invite_code?: string | null
           phone?: string
           referred_by?: string | null
+          status?: string
           total_sms_sent?: number
           updated_at?: string
           username?: string
@@ -107,6 +113,30 @@ export type Database = {
           id?: string
           role?: Database["public"]["Enums"]["app_role"]
           user_id?: string
+        }
+        Relationships: []
+      }
+      users: {
+        Row: {
+          created_at: string
+          generated_invite_code: string | null
+          id: string
+          phone_number: string
+          status: string
+        }
+        Insert: {
+          created_at?: string
+          generated_invite_code?: string | null
+          id?: string
+          phone_number: string
+          status?: string
+        }
+        Update: {
+          created_at?: string
+          generated_invite_code?: string | null
+          id?: string
+          phone_number?: string
+          status?: string
         }
         Relationships: []
       }
@@ -221,6 +251,10 @@ export type Database = {
         Args: { _rate?: number; _submission_id: string }
         Returns: undefined
       }
+      approve_user: {
+        Args: { _invitation_code: string; _user_id: string }
+        Returns: undefined
+      }
       approve_whatsapp_submission: {
         Args: { _rate?: number; _submission_id: string }
         Returns: undefined
@@ -238,6 +272,7 @@ export type Database = {
         Args: { _submission_id: string }
         Returns: undefined
       }
+      reject_user: { Args: { _user_id: string }; Returns: undefined }
       reject_whatsapp_submission: {
         Args: { _submission_id: string }
         Returns: undefined
