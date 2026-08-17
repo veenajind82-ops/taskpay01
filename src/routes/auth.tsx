@@ -33,8 +33,6 @@ function AuthPage() {
   // sign-up state
   const [suPhone, setSuPhone] = useState("");
   const [suPass, setSuPass] = useState("");
-  const [suName, setSuName] = useState("");
-  const [suInvite, setSuInvite] = useState("");
 
   function validPhone(p: string) {
     return /^\d{10}$/.test(p.replace(/\D/g, ""));
@@ -59,7 +57,6 @@ function AuthPage() {
     e.preventDefault();
     if (!validPhone(suPhone)) return toast.error("Enter a valid 10-digit mobile number");
     if (suPass.length < 6) return toast.error("Password must be at least 6 characters");
-    if (!suName.trim()) return toast.error("Username is required");
     setLoading(true);
     const digits = suPhone.replace(/\D/g, "").slice(-10);
     const { error } = await supabase.auth.signUp({
@@ -67,16 +64,12 @@ function AuthPage() {
       password: suPass,
       options: {
         emailRedirectTo: `${window.location.origin}/dashboard`,
-        data: {
-          phone: `+91${digits}`,
-          username: suName.trim(),
-          referred_by: suInvite.trim() || null,
-        },
+        data: { phone: `+91${digits}` },
       },
     });
     setLoading(false);
     if (error) return toast.error(error.message);
-    toast.success("Account created!");
+    toast.success("Registration request submitted for review");
     navigate({ to: "/dashboard", replace: true });
   }
 
