@@ -1,7 +1,7 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect } from "react";
 import { Card } from "@/components/ui/card";
-import { useIsMasterAdmin } from "@/lib/admin-access";
+import { useIsAdmin } from "@/lib/role";
 import { AdminDashboard } from "@/components/AdminDashboard";
 
 export const Route = createFileRoute("/_authenticated/admin")({
@@ -16,7 +16,7 @@ export const Route = createFileRoute("/_authenticated/admin")({
 });
 
 function AdminPage() {
-  const isAdmin = useIsMasterAdmin();
+  const isAdmin = useIsAdmin();
   const navigate = useNavigate();
 
   useEffect(() => {
