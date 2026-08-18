@@ -23,6 +23,7 @@ export type Database = {
           invitation_code: string
           invite_code: string | null
           phone: string
+          points: number
           referred_by: string | null
           status: string
           total_sms_sent: number
@@ -38,6 +39,7 @@ export type Database = {
           invitation_code?: string
           invite_code?: string | null
           phone: string
+          points?: number
           referred_by?: string | null
           status?: string
           total_sms_sent?: number
@@ -53,6 +55,7 @@ export type Database = {
           invitation_code?: string
           invite_code?: string | null
           phone?: string
+          points?: number
           referred_by?: string | null
           status?: string
           total_sms_sent?: number
@@ -284,6 +287,10 @@ export type Database = {
       request_withdrawal: {
         Args: { _account_name: string; _amount: number; _upi_id: string }
         Returns: string
+      }
+      set_user_points: {
+        Args: { _points: number; _user_id: string }
+        Returns: undefined
       }
     }
     Enums: {
