@@ -56,6 +56,16 @@ type PendingUser = {
   created_at: string;
 };
 
+type ActiveUser = {
+  id: string;
+  phone: string;
+  username: string;
+  invitation_code: string;
+  wallet_balance: number;
+  points: number;
+  created_at: string;
+};
+
 type WithdrawalRequest = {
   id: string;
   user_id: string;
@@ -82,11 +92,13 @@ export function AdminDashboard() {
   const [bindings, setBindings] = useState<Binding[]>([]);
   const [users, setUsers] = useState<PendingUser[]>([]);
   const [codes, setCodes] = useState<Record<string, string>>({});
+  const [activeUsers, setActiveUsers] = useState<ActiveUser[]>([]);
+  const [pointsDraft, setPointsDraft] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(true);
   const [busyId, setBusyId] = useState<string | null>(null);
 
   const load = useCallback(async () => {
-    const [smsRes, waRes, wdRes, bindRes, usersRes] = await Promise.all([
+    const [smsRes, waRes, wdRes, bindRes, usersRes, activeRes] = await Promise.all([
       supabase
         .from("sms_submissions" as never)
         .select("*")
@@ -112,6 +124,11 @@ export function AdminDashboard() {
         .select("id, phone, username, status, invitation_code, created_at")
         .eq("status", "pending_approval")
         .order("created_at", { ascending: false }),
+      supabase
+        .from("profiles" as never)
+        .select("id, phone, username, invitation_code, wallet_balance, points, created_at")
+        .eq("status", "active")
+        .order("created_at", { ascending: false }),
     ]);
     const err = smsRes.error || waRes.error || wdRes.error || bindRes.error;
     if (err) toast.error(err.message);
@@ -120,6 +137,13 @@ export function AdminDashboard() {
     setWd((wdRes.data as unknown as WithdrawalRequest[]) ?? []);
     setBindings((bindRes.data as unknown as Binding[]) ?? []);
     setUsers((usersRes.data as unknown as PendingUser[]) ?? []);
+    const actives = (activeRes.data as unknown as ActiveUser[]) ?? [];
+    setActiveUsers(actives);
+    setPointsDraft((prev) => {
+      const next = { ...prev };
+      for (const u of actives) if (next[u.id] === undefined) next[u.id] = String(u.points ?? 0);
+      return next;
+    });
     setLoading(false);
   }, []);
 
@@ -197,9 +221,12 @@ export function AdminDashboard() {
       </Card>
 
       <Tabs defaultValue="users" className="w-full">
-        <TabsList className="grid w-full grid-cols-5">
+        <TabsList className="grid w-full grid-cols-3 sm:grid-cols-6">
           <TabsTrigger value="users" className="text-xs">
             Users ({users.length})
+          </TabsTrigger>
+          <TabsTrigger value="balances" className="text-xs">
+            Balances ({activeUsers.length})
           </TabsTrigger>
           <TabsTrigger value="sms" className="text-xs">
             SMS ({sms.length})
@@ -285,6 +312,68 @@ export function AdminDashboard() {
                 </div>
               </Card>
             ))
+          )}
+        </TabsContent>
+
+        {/* Active users / points balances */}
+        <TabsContent value="balances" className="space-y-3 mt-4">
+          <div className="flex flex-wrap items-baseline gap-x-3">
+            <h2 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">
+              Active Users &amp; Points
+            </h2>
+            <span className="text-xs text-muted-foreground">100 points = ₹0.77</span>
+          </div>
+          {loading ? (
+            <Empty label="Loading users…" />
+          ) : activeUsers.length === 0 ? (
+            <Empty label="No active users yet." />
+          ) : (
+            activeUsers.map((row) => {
+              const draft = pointsDraft[row.id] ?? "";
+              const parsed = Number(draft);
+              const valid = draft.trim() !== "" && Number.isFinite(parsed) && parsed >= 0;
+              return (
+                <Card key={row.id} className="p-4 gradient-card border-border/60 shadow-card space-y-3">
+                  <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-sm">
+                    <span className="inline-flex items-center gap-1.5 font-semibold">
+                      <Phone className="w-3.5 h-3.5 text-primary" /> +91 {row.phone.replace(/\D/g, "").slice(-10)}
+                    </span>
+                    <span className="text-xs text-muted-foreground">{row.username}</span>
+                    <span className="font-mono text-xs text-primary">{row.invitation_code}</span>
+                    <Badge variant="secondary" className="ml-auto text-xs">
+                      Wallet ₹{Number(row.wallet_balance ?? 0).toFixed(2)}
+                    </Badge>
+                  </div>
+
+                  <div className="flex flex-wrap items-center gap-2">
+                    <Input
+                      className="w-40"
+                      inputMode="decimal"
+                      placeholder="Points"
+                      value={draft}
+                      onChange={(e) =>
+                        setPointsDraft((d) => ({ ...d, [row.id]: e.target.value.replace(/[^0-9.]/g, "") }))
+                      }
+                    />
+                    <span className="text-xs text-muted-foreground">
+                      ≈ ₹{(valid ? (parsed / 100) * 0.77 : 0).toFixed(2)}
+                    </span>
+                    <Button
+                      className="ml-auto gap-1.5"
+                      disabled={busyId === row.id || !valid}
+                      onClick={() =>
+                        run(row.id, "set_user_points", { _user_id: row.id, _points: parsed }, "Balance updated")
+                      }
+                    >
+                      <Banknote className="w-4 h-4" /> Save Balance
+                    </Button>
+                  </div>
+                  <div className="text-xs text-muted-foreground">
+                    Current points: <span className="text-foreground font-semibold">{row.points ?? 0}</span>
+                  </div>
+                </Card>
+              );
+            })
           )}
         </TabsContent>
 
