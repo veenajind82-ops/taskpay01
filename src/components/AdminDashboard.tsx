@@ -6,46 +6,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { Input } from "@/components/ui/input";
-import {
-  UserCheck,
-  CheckCircle2,
-  XCircle,
-  ShieldCheck,
-  RadioTower,
-  Clock,
-  Phone,
-  Banknote,
-} from "lucide-react";
-import { SMS_RATE, WHATSAPP_RATE } from "@/lib/admin-access";
-
-type SmsSubmission = {
-  id: string;
-  user_id: string;
-  phone: string;
-  screenshot_url: string;
-  message_count: number;
-  status: string;
-  created_at: string;
-};
-
-type WhatsappSubmission = {
-  id: string;
-  user_id: string;
-  phone: string;
-  screenshot_url: string;
-  delivered_count: number;
-  status: string;
-  created_at: string;
-};
-
-type Binding = {
-  id: string;
-  user_id: string;
-  user_phone: string;
-  status: string;
-  binding_code: string | null;
-  created_at: string;
-};
+import { UserCheck, XCircle, ShieldCheck, RadioTower, Clock, Phone, Banknote } from "lucide-react";
 
 type PendingUser = {
   id: string;
@@ -66,17 +27,6 @@ type ActiveUser = {
   created_at: string;
 };
 
-type WithdrawalRequest = {
-  id: string;
-  user_id: string;
-  phone: string;
-  amount: number;
-  upi_id: string;
-  account_name: string;
-  status: string;
-  created_at: string;
-};
-
 function Empty({ label }: { label: string }) {
   return (
     <Card className="p-8 gradient-card border-border/60 text-center shadow-card">
@@ -86,10 +36,6 @@ function Empty({ label }: { label: string }) {
 }
 
 export function AdminDashboard() {
-  const [sms, setSms] = useState<SmsSubmission[]>([]);
-  const [wa, setWa] = useState<WhatsappSubmission[]>([]);
-  const [wd, setWd] = useState<WithdrawalRequest[]>([]);
-  const [bindings, setBindings] = useState<Binding[]>([]);
   const [users, setUsers] = useState<PendingUser[]>([]);
   const [codes, setCodes] = useState<Record<string, string>>({});
   const [activeUsers, setActiveUsers] = useState<ActiveUser[]>([]);
@@ -98,27 +44,7 @@ export function AdminDashboard() {
   const [busyId, setBusyId] = useState<string | null>(null);
 
   const load = useCallback(async () => {
-    const [smsRes, waRes, wdRes, bindRes, usersRes, activeRes] = await Promise.all([
-      supabase
-        .from("sms_submissions" as never)
-        .select("*")
-        .eq("status", "Pending")
-        .order("created_at", { ascending: false }),
-      supabase
-        .from("whatsapp_submissions" as never)
-        .select("*")
-        .eq("status", "Pending")
-        .order("created_at", { ascending: false }),
-      supabase
-        .from("withdrawal_requests" as never)
-        .select("*")
-        .eq("status", "Pending")
-        .order("created_at", { ascending: false }),
-      supabase
-        .from("whatsapp_bindings" as never)
-        .select("*")
-        .neq("status", "VERIFIED")
-        .order("created_at", { ascending: false }),
+    const [usersRes, activeRes] = await Promise.all([
       supabase
         .from("profiles" as never)
         .select("id, phone, username, status, invitation_code, created_at")
@@ -130,18 +56,14 @@ export function AdminDashboard() {
         .eq("status", "active")
         .order("created_at", { ascending: false }),
     ]);
-    const err = smsRes.error || waRes.error || wdRes.error || bindRes.error;
+    const err = usersRes.error || activeRes.error;
     if (err) toast.error(err.message);
-    setSms((smsRes.data as unknown as SmsSubmission[]) ?? []);
-    setWa((waRes.data as unknown as WhatsappSubmission[]) ?? []);
-    setWd((wdRes.data as unknown as WithdrawalRequest[]) ?? []);
-    setBindings((bindRes.data as unknown as Binding[]) ?? []);
     setUsers((usersRes.data as unknown as PendingUser[]) ?? []);
     const actives = (activeRes.data as unknown as ActiveUser[]) ?? [];
     setActiveUsers(actives);
-    setPointsDraft((prev) => {
-      const next = { ...prev };
-      for (const u of actives) if (next[u.id] === undefined) next[u.id] = String(u.points ?? 0);
+    setPointsDraft(() => {
+      const next: Record<string, string> = {};
+      for (const u of actives) next[u.id] = String(u.points ?? 0);
       return next;
     });
     setLoading(false);
@@ -151,10 +73,6 @@ export function AdminDashboard() {
     load();
     const channel = supabase
       .channel("admin-approval-queues")
-      .on("postgres_changes", { event: "*", schema: "public", table: "sms_submissions" }, load)
-      .on("postgres_changes", { event: "*", schema: "public", table: "whatsapp_submissions" }, load)
-      .on("postgres_changes", { event: "*", schema: "public", table: "withdrawal_requests" }, load)
-      .on("postgres_changes", { event: "*", schema: "public", table: "whatsapp_bindings" }, load)
       .on("postgres_changes", { event: "*", schema: "public", table: "profiles" }, load)
       .subscribe();
     return () => {
@@ -168,29 +86,28 @@ export function AdminDashboard() {
     setBusyId(null);
     if (error) return toast.error(error.message);
     toast.success(ok);
-    load();
+    await load();
   }
 
-  const pendingBindings = bindings.filter((b) => b.status === "PENDING");
-  const total = sms.length + wa.length + wd.length + pendingBindings.length + users.length;
+  async function savePoints(userId: string, points: number) {
+    setBusyId(userId);
+    const { error } = await supabase.rpc("set_user_points" as never, {
+      _user_id: userId,
+      _points: points,
+    } as never);
+    setBusyId(null);
+    if (error) return toast.error(error.message);
+    // reflect immediately, then re-sync from the database
+    setActiveUsers((rows) => rows.map((r) => (r.id === userId ? { ...r, points } : r)));
+    toast.success("Balance Updated Successfully!");
+    await load();
+  }
 
   function randomCode() {
     let out = "";
     const chars = "ABCDEFGHJKMNPQRSTUVWXYZ23456789";
     for (let i = 0; i < 8; i++) out += chars[Math.floor(Math.random() * chars.length)];
     return out;
-  }
-
-  async function sendBindingCode(id: string) {
-    setBusyId(id);
-    const { error } = await supabase
-      .from("whatsapp_bindings" as never)
-      .update({ status: "CODE_SENT", binding_code: "AAAA-AAAA" } as never)
-      .eq("id", id);
-    setBusyId(null);
-    if (error) return toast.error(error.message);
-    toast.success("Verification code sent to user");
-    load();
   }
 
   return (
@@ -201,10 +118,10 @@ export function AdminDashboard() {
         </div>
         <div className="flex-1 min-w-0">
           <h1 className="text-2xl font-bold tracking-tight">Admin Dashboard</h1>
-          <p className="text-sm text-muted-foreground">Review proofs and release earnings.</p>
+          <p className="text-sm text-muted-foreground">Approve registrations and manage balances.</p>
         </div>
         <Badge variant="secondary" className="shrink-0 text-xs">
-          PENDING REQUESTS {total}
+          PENDING REQUESTS {users.length}
         </Badge>
       </div>
 
@@ -221,28 +138,16 @@ export function AdminDashboard() {
       </Card>
 
       <Tabs defaultValue="users" className="w-full">
-        <TabsList className="grid w-full grid-cols-3 sm:grid-cols-6">
+        <TabsList className="grid w-full grid-cols-2">
           <TabsTrigger value="users" className="text-xs">
-            Users ({users.length})
+            Pending Registrations ({users.length})
           </TabsTrigger>
           <TabsTrigger value="balances" className="text-xs">
-            Balances ({activeUsers.length})
-          </TabsTrigger>
-          <TabsTrigger value="sms" className="text-xs">
-            SMS ({sms.length})
-          </TabsTrigger>
-          <TabsTrigger value="whatsapp" className="text-xs">
-            WhatsApp ({wa.length})
-          </TabsTrigger>
-          <TabsTrigger value="withdrawals" className="text-xs">
-            Withdrawals ({wd.length})
-          </TabsTrigger>
-          <TabsTrigger value="bindings" className="text-xs">
-            Bindings ({pendingBindings.length})
+            User Balance Management ({activeUsers.length})
           </TabsTrigger>
         </TabsList>
 
-        {/* User approval queue */}
+        {/* Pending registrations */}
         <TabsContent value="users" className="space-y-3 mt-4">
           <h2 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">
             Pending Registrations
@@ -315,11 +220,11 @@ export function AdminDashboard() {
           )}
         </TabsContent>
 
-        {/* Active users / points balances */}
+        {/* User balance management */}
         <TabsContent value="balances" className="space-y-3 mt-4">
           <div className="flex flex-wrap items-baseline gap-x-3">
             <h2 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">
-              Active Users &amp; Points
+              User Balance Management
             </h2>
             <span className="text-xs text-muted-foreground">100 points = ₹0.77</span>
           </div>
@@ -361,282 +266,18 @@ export function AdminDashboard() {
                     <Button
                       className="ml-auto gap-1.5"
                       disabled={busyId === row.id || !valid}
-                      onClick={() =>
-                        run(row.id, "set_user_points", { _user_id: row.id, _points: parsed }, "Balance updated")
-                      }
+                      onClick={() => savePoints(row.id, parsed)}
                     >
                       <Banknote className="w-4 h-4" /> Save Balance
                     </Button>
                   </div>
                   <div className="text-xs text-muted-foreground">
-                    Current points: <span className="text-foreground font-semibold">{row.points ?? 0}</span>
+                    Current points: <span className="text-foreground font-semibold">{row.points ?? 0}</span> (₹
+                    {(((row.points ?? 0) / 100) * 0.77).toFixed(2)})
                   </div>
                 </Card>
               );
             })
-          )}
-        </TabsContent>
-
-        {/* SMS queue */}
-        <TabsContent value="sms" className="space-y-3 mt-4">
-          <h2 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">
-            Live SMS Submissions
-          </h2>
-          {loading ? (
-            <Empty label="Loading submissions…" />
-          ) : sms.length === 0 ? (
-            <Empty label="No pending SMS submissions right now." />
-          ) : (
-            sms.map((row) => (
-              <Card key={row.id} className="p-4 gradient-card border-border/60 shadow-card space-y-3">
-                <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-sm">
-                  <span className="inline-flex items-center gap-1.5 font-semibold">
-                    <Phone className="w-3.5 h-3.5 text-primary" /> +91 {row.phone || "—"}
-                  </span>
-                  <span className="inline-flex items-center gap-1.5 text-xs text-muted-foreground">
-                    <Clock className="w-3.5 h-3.5" />
-                    {new Date(row.created_at).toLocaleString()}
-                  </span>
-                  <Badge variant="secondary" className="ml-auto text-xs">
-                    {row.message_count} messages
-                  </Badge>
-                </div>
-
-                <img
-                  src={row.screenshot_url}
-                  alt={`SMS usage proof from +91 ${row.phone}`}
-                  loading="lazy"
-                  className="max-h-64 w-full object-contain rounded-lg border border-border bg-background/40"
-                />
-
-                <div className="text-xs text-muted-foreground">
-                  Payout on approval:{" "}
-                  <span className="text-primary font-semibold">
-                    ₹{(row.message_count * SMS_RATE).toFixed(2)}
-                  </span>{" "}
-                  ({row.message_count} × ₹{SMS_RATE.toFixed(2)})
-                </div>
-
-                <div className="flex gap-2">
-                  <Button
-                    className="flex-1 gap-1.5"
-                    disabled={busyId === row.id}
-                    onClick={() =>
-                      run(
-                        row.id,
-                        "approve_sms_submission",
-                        { _submission_id: row.id, _rate: SMS_RATE },
-                        `Approved — ₹${(row.message_count * SMS_RATE).toFixed(2)} credited`,
-                      )
-                    }
-                  >
-                    <CheckCircle2 className="w-4 h-4" /> Approve &amp; Mark Success
-                  </Button>
-                  <Button
-                    variant="destructive"
-                    className="gap-1.5"
-                    disabled={busyId === row.id}
-                    onClick={() =>
-                      run(row.id, "reject_sms_submission", { _submission_id: row.id }, "Submission rejected")
-                    }
-                  >
-                    <XCircle className="w-4 h-4" /> Reject
-                  </Button>
-                </div>
-              </Card>
-            ))
-          )}
-        </TabsContent>
-
-        {/* WhatsApp queue */}
-        <TabsContent value="whatsapp" className="space-y-3 mt-4">
-          <h2 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">
-            Live WhatsApp Submissions
-          </h2>
-          {loading ? (
-            <Empty label="Loading submissions…" />
-          ) : wa.length === 0 ? (
-            <Empty label="No pending WhatsApp submissions right now." />
-          ) : (
-            wa.map((row) => (
-              <Card key={row.id} className="p-4 gradient-card border-border/60 shadow-card space-y-3">
-                <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-sm">
-                  <span className="inline-flex items-center gap-1.5 font-semibold">
-                    <Phone className="w-3.5 h-3.5 text-success" /> +91 {row.phone || "—"}
-                  </span>
-                  <span className="inline-flex items-center gap-1.5 text-xs text-muted-foreground">
-                    <Clock className="w-3.5 h-3.5" />
-                    {new Date(row.created_at).toLocaleString()}
-                  </span>
-                  <Badge variant="secondary" className="ml-auto text-xs">
-                    {row.delivered_count} double-ticks
-                  </Badge>
-                </div>
-
-                <img
-                  src={row.screenshot_url}
-                  alt={`WhatsApp delivery proof from +91 ${row.phone}`}
-                  loading="lazy"
-                  className="max-h-64 w-full object-contain rounded-lg border border-border bg-background/40"
-                />
-
-                <div className="text-xs text-muted-foreground">
-                  Payout on approval:{" "}
-                  <span className="text-success font-semibold">
-                    ₹{(row.delivered_count * WHATSAPP_RATE).toFixed(2)}
-                  </span>{" "}
-                  ({row.delivered_count} × ₹{WHATSAPP_RATE.toFixed(2)})
-                </div>
-
-                <div className="flex gap-2">
-                  <Button
-                    className="flex-1 gap-1.5"
-                    disabled={busyId === row.id}
-                    onClick={() =>
-                      run(
-                        row.id,
-                        "approve_whatsapp_submission",
-                        { _submission_id: row.id, _rate: WHATSAPP_RATE },
-                        `Approved — ₹${(row.delivered_count * WHATSAPP_RATE).toFixed(2)} credited`,
-                      )
-                    }
-                  >
-                    <CheckCircle2 className="w-4 h-4" /> Approve &amp; Credit
-                  </Button>
-                  <Button
-                    variant="destructive"
-                    className="gap-1.5"
-                    disabled={busyId === row.id}
-                    onClick={() =>
-                      run(
-                        row.id,
-                        "reject_whatsapp_submission",
-                        { _submission_id: row.id },
-                        "Submission rejected",
-                      )
-                    }
-                  >
-                    <XCircle className="w-4 h-4" /> Reject
-                  </Button>
-                </div>
-              </Card>
-            ))
-          )}
-        </TabsContent>
-
-        {/* Withdrawals queue */}
-        <TabsContent value="withdrawals" className="space-y-3 mt-4">
-          <h2 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">
-            Withdrawal Requests
-          </h2>
-          {loading ? (
-            <Empty label="Loading requests…" />
-          ) : wd.length === 0 ? (
-            <Empty label="No pending withdrawal requests right now." />
-          ) : (
-            wd.map((row) => (
-              <Card key={row.id} className="p-4 gradient-card border-border/60 shadow-card space-y-3">
-                <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-sm">
-                  <span className="inline-flex items-center gap-1.5 font-semibold">
-                    <Phone className="w-3.5 h-3.5 text-primary" /> +91 {row.phone || "—"}
-                  </span>
-                  <span className="inline-flex items-center gap-1.5 text-xs text-muted-foreground">
-                    <Clock className="w-3.5 h-3.5" />
-                    {new Date(row.created_at).toLocaleString()}
-                  </span>
-                  <Badge className="ml-auto text-xs gap-1">
-                    <Banknote className="w-3.5 h-3.5" /> ₹{Number(row.amount).toFixed(2)}
-                  </Badge>
-                </div>
-
-                <div className="rounded-lg border border-border bg-background/40 p-3 text-sm space-y-1">
-                  <div>
-                    <span className="text-muted-foreground">UPI ID: </span>
-                    <span className="font-mono font-semibold">{row.upi_id}</span>
-                  </div>
-                  <div>
-                    <span className="text-muted-foreground">Account name: </span>
-                    <span className="font-semibold">{row.account_name}</span>
-                  </div>
-                </div>
-
-                <p className="text-xs text-muted-foreground">
-                  Pay this user manually via UPI, then mark the request as paid. Rejecting returns the
-                  held amount to their wallet.
-                </p>
-
-                <div className="flex gap-2">
-                  <Button
-                    className="flex-1 gap-1.5"
-                    disabled={busyId === row.id}
-                    onClick={() =>
-                      run(row.id, "approve_withdrawal", { _request_id: row.id }, "Withdrawal marked as paid")
-                    }
-                  >
-                    <CheckCircle2 className="w-4 h-4" /> Approve &amp; Mark Paid
-                  </Button>
-                  <Button
-                    variant="destructive"
-                    className="gap-1.5"
-                    disabled={busyId === row.id}
-                    onClick={() =>
-                      run(
-                        row.id,
-                        "reject_withdrawal",
-                        { _request_id: row.id, _note: null },
-                        "Withdrawal rejected and refunded",
-                      )
-                    }
-                  >
-                    <XCircle className="w-4 h-4" /> Reject
-                  </Button>
-                </div>
-              </Card>
-            ))
-          )}
-        </TabsContent>
-
-        {/* WhatsApp binding queue */}
-        <TabsContent value="bindings" className="space-y-3 mt-4">
-          <h2 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">
-            WhatsApp Device Binding Requests
-          </h2>
-          {loading ? (
-            <Empty label="Loading requests…" />
-          ) : bindings.length === 0 ? (
-            <Empty label="No binding requests right now." />
-          ) : (
-            bindings.map((row) => (
-              <Card key={row.id} className="p-4 gradient-card border-border/60 shadow-card space-y-3">
-                <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-sm">
-                  <span className="inline-flex items-center gap-1.5 font-semibold">
-                    <Phone className="w-3.5 h-3.5 text-success" /> {row.user_phone}
-                  </span>
-                  <span className="inline-flex items-center gap-1.5 text-xs text-muted-foreground">
-                    <Clock className="w-3.5 h-3.5" />
-                    {new Date(row.created_at).toLocaleString()}
-                  </span>
-                  <Badge variant="secondary" className="ml-auto text-xs">
-                    {row.status}
-                  </Badge>
-                </div>
-
-                {row.status === "CODE_SENT" ? (
-                  <p className="text-xs text-muted-foreground">
-                    Code shared with user:{" "}
-                    <span className="font-mono font-semibold text-primary">{row.binding_code}</span>
-                  </p>
-                ) : (
-                  <Button
-                    className="w-full gap-1.5"
-                    disabled={busyId === row.id}
-                    onClick={() => sendBindingCode(row.id)}
-                  >
-                    <CheckCircle2 className="w-4 h-4" /> Send Verification Code
-                  </Button>
-                )}
-              </Card>
-            ))
           )}
         </TabsContent>
       </Tabs>

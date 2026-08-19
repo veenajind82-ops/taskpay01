@@ -11,6 +11,7 @@ export type Profile = {
   earned_today: number;
   total_sms_sent: number;
   active_whatsapp: number;
+  points: number;
   status: string;
   created_at: string;
 };
