@@ -51,7 +51,7 @@ function Dashboard() {
         <p className="text-sm text-muted-foreground mt-1">Track your earnings and quick tasks.</p>
       </div>
 
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+      <div className="grid grid-cols-2 lg:grid-cols-5 gap-3">
         <StatCard
           label="Wallet Balance"
           value={`₹${(profile?.wallet_balance ?? 0).toFixed(2)}`}
