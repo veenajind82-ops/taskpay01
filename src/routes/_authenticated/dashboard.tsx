@@ -1,7 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useProfile } from "@/lib/profile";
 import { Card } from "@/components/ui/card";
-import { Wallet, TrendingUp, MessageSquare, MessageCircle, ArrowRight } from "lucide-react";
+import { Wallet, TrendingUp, MessageSquare, MessageCircle, ArrowRight, Coins } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/dashboard")({
   head: () => ({
@@ -63,6 +63,12 @@ function Dashboard() {
           value={`₹${(profile?.earned_today ?? 0).toFixed(2)}`}
           icon={TrendingUp}
           accent="bg-info/15 text-info"
+        />
+        <StatCard
+          label="Points"
+          value={`${profile?.points ?? 0} pts · ₹${(((profile?.points ?? 0) / 100) * 0.77).toFixed(2)}`}
+          icon={Coins}
+          accent="bg-success/15 text-success"
         />
         <StatCard
           label="Total SMS Sent"
